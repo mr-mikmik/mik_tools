@@ -1,8 +1,9 @@
+from __future__ import division
 import torch
 import numpy as np
 import math
 import warnings
-from __future__ import division
+
 
 
 # epsilon for testing whether a number is close to zero

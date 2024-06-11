@@ -1,11 +1,10 @@
 # Code addapted from Christoph Gohlke Homogeneous Transformation Matrices and Quaternions.
-
+from __future__ import division
 import numpy as np
 import torch
 import math
 import torch.nn.functional as F
 import warnings
-from __future__ import division
 from mik_tools.mik_tf_tools.transformations.tr_tools import _EPS, unit_vector, vector_norm, is_same_transform
 
 
