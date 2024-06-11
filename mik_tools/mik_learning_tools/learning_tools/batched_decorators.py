@@ -1,0 +1,87 @@
+import torch
+import torch.nn as nn
+import abc
+
+
+def fake_batched_operation(function, x):
+    return x
+
+
+def batched_1d_operation(function, x):
+    """
+    Apply a 1d batch operation to an arbitrary shaped tensor (...., num_feats)
+    This function handles the tensor reshaping so the function can expect an element of size (N, num_feats)
+    :param function:
+    :param x:
+    :return:
+    """
+    input_size = x.shape
+    if len(x.shape) > 2:
+        x = x.reshape(-1, input_size[-1])
+    out = function(x)
+    out = out.reshape(*input_size)
+    return out
+
+
+def batched_img_operation(function, x):
+    """
+    Apply a 2d batch operation to an arbitrary shaped tensor (...., num_feats, w, h)
+    This function handles the tensor reshaping so the function can expect an element of size (N, num_feats, w, h)
+    :param function:
+    :param x:
+    :return:
+    """
+    input_size = x.shape
+    x = x.reshape(-1, *input_size[-3:])
+    out = function(x)
+    out = out.reshape(*input_size)
+    return out
+
+
+def batched_1d_decorator(function):
+    """
+    Apply a 1d batch operation to an arbitrary shaped tensor (...., num_feats)
+    This function handles the tensor reshaping so the function can expect an element of size (N, num_feats)
+    """
+
+    def batched_1d_operation_wrapper(x):
+        input_size = x.shape
+        if len(x.shape) > 2:
+            x = x.reshape(-1, input_size[-1])
+        out = function(x)
+        out = out.reshape(*input_size)
+        return out
+
+    return batched_1d_operation_wrapper
+
+
+def batched_img_decorator(function):
+    """
+    Apply a 2d batch operation to an arbitrary shaped tensor (...., num_feats, w, h)
+    This function handles the tensor reshaping so the function can expect an element of size (N, num_feats, w, h)
+    """
+
+    def batched_img_operation_wrapper(x):
+        input_size = x.shape
+        x = x.reshape(-1, *input_size[-3:])
+        out = function(x)
+        out = out.reshape(*input_size)
+        return out
+
+    return batched_img_operation_wrapper
+
+
+@batched_1d_decorator
+def sum_1(x):
+    print(x.shape)
+    out = x + 1
+    return out
+
+
+# TEST:
+if __name__ == '__main__':
+    x = torch.ones((5, 3, 4))
+    print(x.shape)      # (5,3,4)
+    out = sum_1(x)      # (15, 4)
+    print(out.shape)    # (5,3,4)
+

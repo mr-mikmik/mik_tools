@@ -3,6 +3,7 @@ import yaml
 
 package_name = 'mik_tools'
 PACKAGE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)).split(f'/{package_name}/')[0], package_name)
+project_path = PACKAGE_PATH
 MESHES_PATH = os.path.join(PACKAGE_PATH, 'meshes')
 CONFIG_PATH = os.path.join(PACKAGE_PATH, 'config')
 

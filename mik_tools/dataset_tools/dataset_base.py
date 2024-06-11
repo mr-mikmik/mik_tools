@@ -10,8 +10,8 @@ from tqdm import tqdm
 import copy
 
 from mik_tools.dataset_tools.aux.data_transformations import TensorTypeTr
+from mik_tools.aux.package_utils import PACKAGE_PATH
 
-project_path = os.path.join(os.path.dirname(os.path.abspath(__file__)).split('/bubble_tools')[0], 'bubble_tools')
 
 
 class DatasetBase(Dataset, abc.ABC):
@@ -231,7 +231,7 @@ class DatasetBase(Dataset, abc.ABC):
         Returns the path to the main project directory. Used for finding the default data path
         :return:
         """
-        return project_path
+        return PACKAGE_PATH
 
     def get_sizes(self):
         sample_test = self.__getitem__(0)

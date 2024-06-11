@@ -1,7 +1,7 @@
 import setuptools
 
 setuptools.setup(
-    name="mmint_tools",
+    name="mik_tools",
     version="0.0.1",
     author='mr-mikmik',
     author_email='oller@umich.edu',
