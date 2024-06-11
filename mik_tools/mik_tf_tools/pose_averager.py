@@ -21,7 +21,7 @@ class PoseAverager(object):
 
 # DEBUG:
 if __name__ == '__main__':
-    from mmint_tools import tr
+    from mik_tools import tr
     pose_averager = PoseAverager(buffer_size=10)
     regular_pose = np.array([0, 0, 0, 0, 0, 0, 1])
     for i in range(30):
