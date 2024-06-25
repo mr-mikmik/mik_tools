@@ -6,6 +6,7 @@ PACKAGE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)).split(f'/
 project_path = PACKAGE_PATH
 MESHES_PATH = os.path.join(PACKAGE_PATH, 'meshes')
 CONFIG_PATH = os.path.join(PACKAGE_PATH, 'config')
+MODELS_PATH = os.path.join(PACKAGE_PATH, 'models')
 
 
 def get_mesh_dir_path(collision=False, visual=False):
