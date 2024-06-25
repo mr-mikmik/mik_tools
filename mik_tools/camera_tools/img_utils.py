@@ -148,3 +148,25 @@ def bilinear_interpolate(im, us, vs):
     wd = (vs - v0) * (us - u0)
 
     return wa * Ia + wb * Ib + wc * Ic + wd * Id
+
+
+def project_point_to_image(point_cof, K, as_int=False):
+    """
+    Return uv image coordinates of the point in the camera frame
+    Args:
+        point_xyz: (..., 3) array or tensor in the camera frame
+        K: Intrinsic matrix (3, 3) array or tensor
+    Returns: (..., 2) array of the (u,v) coordiantes for each point
+
+    """
+    cx = K[..., 0, 2]
+    cy = K[..., 1, 2]
+    fx = K[..., 0, 0]
+    fy = K[..., 1, 1]
+    point_u = fx * point_cof[0] / point_cof[2] + cx
+    point_v = fy * point_cof[1] / point_cof[2] + cy
+    if as_int:
+        point_u = point_u.round().astype(int)
+        point_v = point_v.round().astype(int)
+    point_uv = np.stack([point_u, point_v], axis=-1)
+    return point_uv
