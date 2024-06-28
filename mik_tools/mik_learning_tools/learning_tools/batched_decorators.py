@@ -32,9 +32,9 @@ def batched_img_operation(function, x):
     :return:
     """
     input_size = x.shape
-    x = x.reshape(-1, *input_size[-3:])
-    out = function(x)
-    out = out.reshape(*input_size)
+    x = x.reshape(-1, *input_size[-3:]) # (B, num_feats, w, h)
+    out = function(x) # (B, ..new_dims..)
+    out = out.reshape(*(input_size[:-3] + out.shape[1:])) # (..., ..new_dims)
     return out
 
 
