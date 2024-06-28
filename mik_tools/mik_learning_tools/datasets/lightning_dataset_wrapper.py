@@ -2,8 +2,7 @@ import torch
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
-
-from mik_tools.mik_learning_tools.learning_tools.arg_tools import get_datamodule_specific_args
+from argparse import ArgumentParser
 
 
 class LightningDatasetWrapper(pl.LightningDataModule):
@@ -71,3 +70,17 @@ class LightningDatasetWrapper(pl.LightningDataModule):
         return parser
 
 
+
+def get_datamodule_specific_args(parent_parser):
+    parser = ArgumentParser(parents=[parent_parser], add_help=False)
+    parser.add_argument("--batch_size", type=int, default=None, help='Number of samples to be processed per iteration. If None, we will use the full dataset size. Default: None')
+    parser.add_argument("--seed", type=int, default=0, help='Random seed for the data split. Default: 0')
+    parser.add_argument("--num_workers", type=int, default=8, help='Number of processes used to load the data. Default: 8')
+    parser.add_argument("--train_fraction", type=float, default=.8, help='Percent of the dataset used for training. Default: 0.8 (80%)')
+    parser.add_argument("--val_fraction", type=float, default=None, help='Percent of the dataset used for validation. If None, it uses the remaining data from training and testing. Default: None')
+    parser.add_argument("--train_size", type=int, default=None, help='Number of data samples in dataset used for training. If None, we use the train_fraction. Default: None')
+    parser.add_argument("--val_size", type=int, default=None, help='Number of data samples in dataset used for training. If None, we use the train_fraction. Default: None')
+    parser.add_argument("--test_size", type=int, default=0, help='Number of data samples in dataset used for testing. Default: 0')
+    parser.add_argument("--drop_last", type=bool, default=True, help='Option to exclude the last batch that does not have full batch size. Default: True')
+    parser.add_argument("--pin_memory", action='store_true', help='If true, the dataloaders automatically puts the fetched data Tensors in pinnend memory -- faster data transfers to CUDA-enabled GPus.. Default: False')
+    return parser
