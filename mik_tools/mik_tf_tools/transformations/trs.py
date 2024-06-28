@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import warnings
 import math
+from typing import Union
 
 import torch.nn.functional as F
 from mik_tools.mik_tf_tools.transformations.tr_tools import _AXES2TUPLE, _EPS, _NEXT_AXIS, _TUPLE2AXES, vector_norm, unit_vector, _sqrt_positive_part
@@ -197,21 +198,56 @@ def quaternion_from_euler(ai, aj, ak, axes='sxyz'):
     return quaternion
 
 
-def quaternion_about_axis(angle, axis):
-    """Return quaternion for rotation about axis.
+def quaternion_about_axis(angle:Union[torch.Tensor, np.ndarray], axis:Union[torch.Tensor, np.ndarray]):
+    """
+    Return quaternion for rotation about axis.
+    Args:
+        angle (np.ndarray or torch.Tensor): of shape (...)
+        axis ():
+
+    Returns:
 
     >>> q = quaternion_about_axis(0.123, (1, 0, 0))
     >>> np.allclose(q, [0.06146124, 0, 0, 0.99810947])
     True
 
     """
-    quaternion = np.zeros((4, ), dtype=np.float64)
-    quaternion[:3] = axis[:3]
-    qlen = vector_norm(quaternion)
-    if qlen > _EPS:
-        quaternion *= math.sin(angle/2.0) / qlen
-    quaternion[3] = math.cos(angle/2.0)
+    if torch.is_tensor(axis):
+        quaternion = quaternion_about_axis_tensor(angle=angle, axis=axis)
+    elif type(axis) is np.ndarray:
+        quaternion = quaternion_about_axis_array(angle=angle, axis=axis)
+    else:
+        raise NotImplementedError(f'Input types not tensor or array (types: axis {type(axis)} angle {type(angle)}')
     return quaternion
+
+
+def quaternion_about_axis_array(angle:np.ndarray, axis:np.ndarray) -> np.ndarray:
+    # angle: np.ndarray of shape (...,)
+    # axis: np.ndarray of shape (...,3)
+    axis_norm = np.linalg.norm(axis, axis=-1, keepdims=True) # (...,1)
+    axis_unit = axis/axis_norm # (...,3) TODO: make this safe
+    qxyz = axis_unit*np.expand_dims(np.sin(angle*0.5), axis=-1) # (..., 3)
+    qw = np.expand_dims(np.cos(angle*0.5), axis=-1) # (...,1)
+    quaternion = np.concatenate([qxyz, qw], axis=-1) # (..., 4)
+    return quaternion
+
+
+def quaternion_about_axis_tensor(angle:torch.Tensor, axis:torch.Tensor) -> torch.Tensor:
+    # angle: torch.Tensor of shape (...,)
+    # axis: torch.Tensor of shape (...,3)
+    axis_norm = torch.linalg.norm(axis, axis=-1).unsqueeze(-1) # (..., 1)
+    axis_unit = axis/axis_norm # (..., 3) TODO: make this safe
+    qxyz = axis_unit*torch.sin(angle*0.5)
+    qw = torch.cos(angle*0.5).unsqueeze(-1)
+    quaternion = torch.cat([qxyz, qw], dim=-1) # (..., 4)
+    return quaternion
+
+
+
+
+
+
+
 
 
 def axis_angle_from_quaternion(quaternion):
