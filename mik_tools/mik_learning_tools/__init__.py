@@ -4,6 +4,7 @@ from mik_tools.mik_learning_tools.learning_tools.arg_tools import get_lightning_
 from mik_tools.mik_learning_tools.learning_tools.batched_decorators import batched_img_operation, batched_img_decorator, batched_1d_operation, batched_1d_decorator, fake_batched_operation
 from mik_tools.mik_learning_tools.learning_tools.normalizers import NormalizerBase, FakeNormalizer, Normalizer1d, ImageNormalizer
 from mik_tools.mik_learning_tools.learning_tools.train_tools import train_model, NormalizationQuickstart
+from mik_tools.mik_learning_tools.learning_tools.processing_tools import resnet_process_img
 # Datasets
 from mik_tools.mik_learning_tools.datasets.lightning_dataset_wrapper import LightningDatasetWrapper
 # Models
