@@ -130,7 +130,10 @@ class DatasetBase(Dataset, abc.ABC):
         """
         sliced_dataset = self.copy()  # copy the dataset
         sliced_dataset.item_indxs = self.item_indxs[item]
-        sliced_dataset.sample_codes = self.sample_codes[item]
+        if self.sample_codes is None:
+            sliced_dataset.sample_codes = self.sample_codes
+        else:
+            sliced_dataset.sample_codes = self.sample_codes[item]
         # sliced_dataset.
         return sliced_dataset
 
@@ -143,7 +146,10 @@ class DatasetBase(Dataset, abc.ABC):
         subsampled_dataset = self.copy()
         # subsample the sample_codes and item_indxs
         subsampled_dataset.item_indxs = [self.item_indxs[i] for i in item]
-        subsampled_dataset.sample_codes = [self.sample_codes[i] for i in item]
+        if self.sample_codes is None:
+            subsampled_dataset.sample_codes = None
+        else:
+            subsampled_dataset.sample_codes = [self.sample_codes[i] for i in item]
         return subsampled_dataset
 
     def copy(self):

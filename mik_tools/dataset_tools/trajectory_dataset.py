@@ -41,8 +41,9 @@ class TrajectoryDataset(LegendedDataset):
         sliced_dataset.item_indxs = self.item_indxs[item]
         sliced_dataset.sample_codes = self.sample_codes[item]
         # also slice the trajectory lines
-        new_trajectory_lines = {k:v for k, v in sliced_dataset.trajectory_lines.items() if k in sliced_dataset.sample_codes}
-        sliced_dataset.trajectory_lines = new_trajectory_lines
+        if self.trajectory_lines is not None:
+            new_trajectory_lines = {k:v for k, v in sliced_dataset.trajectory_lines.items() if k in sliced_dataset.sample_codes}
+            sliced_dataset.trajectory_lines = new_trajectory_lines
         return sliced_dataset
 
     def _subsample_dataset(self, item):
@@ -55,9 +56,10 @@ class TrajectoryDataset(LegendedDataset):
         # subsample the sample_codes and item_indxs
         subsampled_dataset.item_indxs = [self.item_indxs[i] for i in item]
         subsampled_dataset.sample_codes = [self.sample_codes[i] for i in item]
-        new_trajectory_lines = {k: v for k, v in subsampled_dataset.trajectory_lines.items() if
+        if self.trajectory_lines is not None:
+            new_trajectory_lines = {k: v for k, v in subsampled_dataset.trajectory_lines.items() if
                                 k in subsampled_dataset.sample_codes}
-        subsampled_dataset.trajectory_lines = new_trajectory_lines
+            subsampled_dataset.trajectory_lines = new_trajectory_lines
         return subsampled_dataset
 
     def _get_sample_codes(self):
