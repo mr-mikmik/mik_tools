@@ -39,6 +39,7 @@ class DatasetBase(Dataset, abc.ABC):
         super().__init__()
         self.means, self.stds = None, None
         self.maxs, self.mins = None, None
+        self._pre_process_hook()
         if process:
             self.process()
 
@@ -155,6 +156,9 @@ class DatasetBase(Dataset, abc.ABC):
     def copy(self):
         copied_dataset = copy.deepcopy(self)
         return copied_dataset
+
+    def _pre_process_hook(self):
+        pass
 
     def process(self):
         if not os.path.exists(self.processed_data_path) or not self.load_cache or self.contribute_mode:
