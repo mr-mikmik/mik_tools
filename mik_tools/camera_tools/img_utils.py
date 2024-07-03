@@ -163,8 +163,8 @@ def project_point_to_image(point_cof, K, as_int=False):
     cy = K[..., 1, 2]
     fx = K[..., 0, 0]
     fy = K[..., 1, 1]
-    point_u = fx * point_cof[0] / point_cof[2] + cx
-    point_v = fy * point_cof[1] / point_cof[2] + cy
+    point_u = fx * point_cof[..., 0] / point_cof[..., 2] + cx
+    point_v = fy * point_cof[..., 1] / point_cof[..., 2] + cy
     if as_int:
         point_u = point_u.round().astype(int)
         point_v = point_v.round().astype(int)
