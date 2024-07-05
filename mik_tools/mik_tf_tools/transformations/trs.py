@@ -244,12 +244,6 @@ def quaternion_about_axis_tensor(angle:torch.Tensor, axis:torch.Tensor) -> torch
 
 
 
-
-
-
-
-
-
 def axis_angle_from_quaternion(quaternion):
     """Return angle and axis from quaternion.
 
@@ -272,6 +266,61 @@ def axis_angle_from_quaternion(quaternion):
         axis = np.array([1.0, 0.0, 0.0])
     axis = axis/vector_norm(axis) # make sure it is unit length
     return axis, angle
+
+
+def axis_angle_to_quat(axis_angle: Union[torch.Tensor, np.ndarray]) -> Union[torch.Tensor, np.ndarray]:
+    """
+    Transform an axis_angle to quaternion
+    Args:
+        axis_angle (np.ndarray): of shape (..., 3) representing an orientation in the axis-angle format, where
+         - angle is the axis_angle norm
+         - axis is the direction of the vector
+
+    Returns:
+        quat (np.ndarray): of shape (..., 4)
+    """
+    if torch.is_tensor(axis_angle):
+        quaternion = axis_angle_to_quat_tensor(axis_angle=axis_angle)
+    elif type(axis_angle) is np.ndarray:
+        quaternion = axis_angle_to_quat_array(axis_angle=axis_angle)
+    else:
+        raise NotImplementedError(f'Input types not tensor or array (types: axis_angle {type(axis_angle)}')
+    return quaternion
+
+
+def axis_angle_to_quat_array(axis_angle: np.ndarray) -> np.ndarray:
+    """
+    Args:
+        axis_angle (np.ndarray): of shape (..., 3) representing an orientation in the axis-angle format, where
+         - angle is the axis_angle norm
+         - axis is the direction of the vector
+
+    Returns:
+        quat (np.ndarray): of shape (..., 4)
+    """
+    angle = np.linalg.norm(axis_angle, axis=-1, keepdims=True) # (..., 1)
+    axis = axis_angle / angle
+    quat = quaternion_about_axis_array(angle=angle[...,0], axis=axis)
+    return quat
+
+
+def axis_angle_to_quat_tensor(axis_angle: torch.Tensor) -> torch.Tensor:
+    """
+
+    Args:
+        axis_angle (torch.Tensor): of shape (..., 3) representing an orientation in the axis-angle format, where
+         - angle is the axis_angle norm
+         - axis is the direction of the vector
+
+    Returns:
+        quat (torch.Tensor): of shape (..., 4)
+    """
+    angle = torch.linalg.norm(axis_angle, dim=-1) # (...,)
+    axis = axis_angle / angle.unsqueeze(-1) # (..., 3)
+    quat = quaternion_about_axis_tensor(angle=angle, axis=axis)
+    return quat
+
+
 
 
 def quaternion_matrix(quaternion):
