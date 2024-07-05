@@ -237,7 +237,7 @@ def quaternion_about_axis_tensor(angle:torch.Tensor, axis:torch.Tensor) -> torch
     # axis: torch.Tensor of shape (...,3)
     axis_norm = torch.linalg.norm(axis, axis=-1).unsqueeze(-1) # (..., 1)
     axis_unit = axis/axis_norm # (..., 3) TODO: make this safe
-    qxyz = axis_unit*torch.sin(angle*0.5)
+    qxyz = axis_unit*torch.sin(angle*0.5).unsqueeze(-1) # (..., 3)
     qw = torch.cos(angle*0.5).unsqueeze(-1)
     quaternion = torch.cat([qxyz, qw], dim=-1) # (..., 4)
     return quaternion
