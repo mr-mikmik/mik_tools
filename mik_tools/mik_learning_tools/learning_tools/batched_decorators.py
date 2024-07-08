@@ -17,9 +17,9 @@ def batched_1d_operation(function, x):
     """
     input_size = x.shape
     if len(x.shape) > 2:
-        x = x.reshape(-1, input_size[-1])
-    out = function(x)
-    out = out.reshape(*input_size)
+        x = x.reshape(-1, input_size[-1]) # (B, num_feats)
+    out = function(x) # (B, ..new_dims) (
+    out = out.reshape(*(input_size[:-1] + out.shape[1:]))  # (..., ..new_dims)
     return out
 
 
@@ -43,14 +43,8 @@ def batched_1d_decorator(function):
     Apply a 1d batch operation to an arbitrary shaped tensor (...., num_feats)
     This function handles the tensor reshaping so the function can expect an element of size (N, num_feats)
     """
-
     def batched_1d_operation_wrapper(x):
-        input_size = x.shape
-        if len(x.shape) > 2:
-            x = x.reshape(-1, input_size[-1])
-        out = function(x)
-        out = out.reshape(*input_size)
-        return out
+        return batched_1d_operation(function, x)
 
     return batched_1d_operation_wrapper
 
@@ -62,13 +56,16 @@ def batched_img_decorator(function):
     """
 
     def batched_img_operation_wrapper(x):
-        input_size = x.shape
-        x = x.reshape(-1, *input_size[-3:])
-        out = function(x)
-        out = out.reshape(*input_size)
-        return out
+        return batched_img_operation(function, x)
 
     return batched_img_operation_wrapper
+
+
+def fake_batched_decorator(function):
+    def fake_batched_operation_wrapper(x):
+        return fake_batched_operation(function, x)
+
+    return fake_batched_operation_wrapper
 
 
 @batched_1d_decorator
