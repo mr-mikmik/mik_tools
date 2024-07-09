@@ -9,24 +9,38 @@ import torch.nn.functional as F
 from mik_tools.mik_tf_tools.transformations.tr_tools import _AXES2TUPLE, _EPS, _NEXT_AXIS, _TUPLE2AXES, vector_norm, unit_vector, _sqrt_positive_part
 
 
-def euler_matrix(ai, aj, ak, axes='sxyz'):
-    """Return homogeneous rotation matrix from Euler angles and axis sequence.
+def rotation_to_transform(rotation_matrix: Union[torch.tensor, np.ndarray]) -> Union[torch.tensor, np.ndarray]:
+    """
+    Extends SO(3) to SE(3) with zero translation
+    Args:
+        rotation_matrix (torch.tensor, np.ndarray): of shape (..., 3, 3)
+    Returns:
+        transform_matrix (torch.tensor, np.ndarray) of shape (..., 4, 4)
+    """
+    batch_size = rotation_matrix.shape[:-2]
+    if torch.is_tensor(rotation_matrix):
+        # torch case
+        transform_matrix = torch.zeros(batch_size + (4, 4), dtype=rotation_matrix.dtype, device=rotation_matrix.device)
+    else:
+        # numpy case
+        transform_matrix = np.zeros(batch_size + (4, 4))
+    transform_matrix[..., :3, :3] = rotation_matrix
+    transform_matrix[..., 3, 3] = 1
+    return transform_matrix
 
+
+
+
+
+
+
+
+
+def euler_matrix(ai, aj, ak, axes='sxyz'):
+    """
+    Return homogeneous rotation matrix from Euler angles and axis sequence.
     ai, aj, ak : Euler's roll, pitch and yaw angles
     axes : One of 24 axis sequences as string or encoded tuple
-
-    >>> R = euler_matrix(1, 2, 3, 'syxz')
-    >>> np.allclose(np.sum(R[0]), -1.34786452)
-    True
-    >>> R = euler_matrix(1, 2, 3, (0, 1, 0, 1))
-    >>> np.allclose(np.sum(R[0]), -0.383436184)
-    True
-    >>> ai, aj, ak = (4.0*math.pi) * (np.random.random(3) - 0.5)
-    >>> for axes in _AXES2TUPLE.keys():
-    ...    R = euler_matrix(ai, aj, ak, axes)
-    >>> for axes in _TUPLE2AXES.keys():
-    ...    R = euler_matrix(ai, aj, ak, axes)
-
     """
     try:
         firstaxis, parity, repetition, frame = _AXES2TUPLE[axes]
@@ -73,22 +87,12 @@ def euler_matrix(ai, aj, ak, axes='sxyz'):
 
 
 def euler_from_matrix(matrix, axes='sxyz'):
-    """Return Euler angles from rotation matrix for specified axis sequence.
+    """
+    Return Euler angles from rotation matrix for specified axis sequence.
 
     axes : One of 24 axis sequences as string or encoded tuple
 
     Note that many Euler angle triplets can describe one matrix.
-
-    >>> R0 = euler_matrix(1, 2, 3, 'syxz')
-    >>> al, be, ga = euler_from_matrix(R0, 'syxz')
-    >>> R1 = euler_matrix(al, be, ga, 'syxz')
-    >>> np.allclose(R0, R1)
-    True
-    >>> angles = (4.0*math.pi) * (np.random.random(3) - 0.5)
-    >>> for axes in _AXES2TUPLE.keys():
-    ...    R0 = euler_matrix(axes=axes, *angles)
-    ...    R1 = euler_matrix(axes=axes, *euler_from_matrix(R0, axes))
-    ...    if not np.allclose(R0, R1): print axes, "failed"
 
     """
     try:
@@ -131,26 +135,17 @@ def euler_from_matrix(matrix, axes='sxyz'):
 
 
 def euler_from_quaternion(quaternion, axes='sxyz'):
-    """Return Euler angles from quaternion for specified axis sequence.
-
-    >>> angles = euler_from_quaternion([0.06146124, 0, 0, 0.99810947])
-    >>> np.allclose(angles, [0.123, 0, 0])
-    True
-
+    """
+    Return Euler angles from quaternion for specified axis sequence.
     """
     return euler_from_matrix(quaternion_matrix(quaternion), axes)
 
 
 def quaternion_from_euler(ai, aj, ak, axes='sxyz'):
-    """Return quaternion from Euler angles and axis sequence.
-
+    """
+    Return quaternion from Euler angles and axis sequence.
     ai, aj, ak : Euler's roll, pitch and yaw angles
     axes : One of 24 axis sequences as string or encoded tuple
-
-    >>> q = quaternion_from_euler(1, 2, 3, 'ryxz')
-    >>> np.allclose(q, [0.310622, -0.718287, 0.444435, 0.435953])
-    True
-
     """
     try:
         firstaxis, parity, repetition, frame = _AXES2TUPLE[axes.lower()]
@@ -243,16 +238,9 @@ def quaternion_about_axis_tensor(angle:torch.Tensor, axis:torch.Tensor) -> torch
     return quaternion
 
 
-
 def axis_angle_from_quaternion(quaternion):
-    """Return angle and axis from quaternion.
-
-    >>> angle, axis = axis_angle_from_quaternion([0.06146124, 0, 0, 0.99810947])
-    >>> np.allclose(angle, 0.123)
-    True
-    >>> np.allclose(axis, [1, 0, 0])
-    True
-
+    """
+    Return angle and axis from quaternion.
     """
     quaternion = np.array(quaternion[:4], dtype=np.float64, copy=True)
     qlen = vector_norm(quaternion)
@@ -321,15 +309,9 @@ def axis_angle_to_quat_tensor(axis_angle: torch.Tensor) -> torch.Tensor:
     return quat
 
 
-
-
 def quaternion_matrix(quaternion):
-    """Return homogeneous rotation matrix from quaternion.
-
-    >>> R = quaternion_matrix([0.06146124, 0, 0, 0.99810947])
-    >>> np.allclose(R, rotation_matrix(0.123, (1, 0, 0)))
-    True
-
+    """
+    Return homogeneous rotation matrix from quaternion.
     """
     q = np.array(quaternion[:4], dtype=np.float64, copy=True)
     nq = np.dot(q, q)
@@ -346,13 +328,8 @@ def quaternion_matrix(quaternion):
 
 
 def quaternion_from_matrix(matrix):
-    """Return quaternion from rotation matrix.
-
-    >>> R = rotation_matrix(0.123, (1, 2, 3))
-    >>> q = quaternion_from_matrix(R)
-    >>> np.allclose(q, [0.0164262, 0.0328524, 0.0492786, 0.9981095])
-    True
-
+    """
+    Return quaternion from rotation matrix.
     """
     q = np.empty((4, ), dtype=np.float64)
     M = np.array(matrix, dtype=np.float64, copy=False)[:4, :4]
@@ -376,9 +353,6 @@ def quaternion_from_matrix(matrix):
     q *= 0.5 / math.sqrt(t * M[3, 3])
     return q
 
-
-# ======================================================================
-# MIK Additions: Batched versions of the above functions
 
 def quaternion_matrix_batched_array(quaternion):
     """
@@ -450,8 +424,6 @@ def quaternion_from_matrix_batched_array(matrix):
     return quaternions_out
 
 
-
-
 def quaternion_from_matrix_batched_tensor(matrix_in: torch.Tensor) -> torch.Tensor:
     """
     Convert rotations given as rotation matrices to quaternions.
@@ -520,81 +492,9 @@ def quaternion_from_matrix_batched_tensor(matrix_in: torch.Tensor) -> torch.Tens
     return quaternions
 
 
-def quaternion_from_matrix_batched_tensor(matrix: torch.Tensor) -> torch.Tensor:
-    """
-    Convert rotations given as rotation matrices to quaternions.
-
-    Args:
-        matrix: Rotation matrices as tensor of shape (..., 4, 4).
-
-    Returns:
-        quaternions with real part first, as tensor of shape (..., 4).
-    """
-    if matrix.size(-1) == 4 or matrix.size(-2) == 4:
-        matrix = matrix[..., :3, :3]
-    if matrix.size(-1) != 3 or matrix.size(-2) != 3:
-        raise ValueError(f"Invalid rotation matrix shape {matrix.shape}.")
-
-    batch_dim = matrix.shape[:-2]
-    m00, m01, m02, m10, m11, m12, m20, m21, m22 = torch.unbind(
-        matrix.reshape(batch_dim + (9,)), dim=-1
-    )
-
-    q_abs = _sqrt_positive_part(
-        torch.stack(
-            [
-                1.0 + m00 + m11 + m22,
-                1.0 + m00 - m11 - m22,
-                1.0 - m00 + m11 - m22,
-                1.0 - m00 - m11 + m22,
-            ],
-            dim=-1,
-        )
-    )
-
-    # we produce the desired quaternion multiplied by each of r, i, j, k
-    quat_by_rijk = torch.stack(
-        [
-            # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and
-            #  `int`.
-            torch.stack([q_abs[..., 0] ** 2, m21 - m12, m02 - m20, m10 - m01], dim=-1),
-            # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and
-            #  `int`.
-            torch.stack([m21 - m12, q_abs[..., 1] ** 2, m10 + m01, m02 + m20], dim=-1),
-            # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and
-            #  `int`.
-            torch.stack([m02 - m20, m10 + m01, q_abs[..., 2] ** 2, m12 + m21], dim=-1),
-            # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and
-            #  `int`.
-            torch.stack([m10 - m01, m20 + m02, m21 + m12, q_abs[..., 3] ** 2], dim=-1),
-        ],
-        dim=-2,
-    )
-
-    # We floor here at 0.1 but the exact level is not important; if q_abs is small,
-    # the candidate won't be picked.
-    flr = torch.tensor(0.1).to(dtype=q_abs.dtype, device=q_abs.device)
-    quat_candidates = quat_by_rijk / (2.0 * q_abs[..., None].max(flr))
-
-    # if not for numerical problems, quat_candidates[i] should be same (up to a sign),
-    # forall i; we pick the best-conditioned one (with the largest denominator)
-    out = quat_candidates[
-        torch.nn.functional.one_hot(q_abs.argmax(dim=-1), num_classes=4) > 0.5, :
-    ].reshape(batch_dim + (4,))
-    # standardize the output
-    quat_out = torch.where(out[..., 0:1] < 0, -out, out)
-    # This gets q = [qw, qx, qy, qz]. We want [qx, qy, qz, qw].
-    quat_out = torch.cat([quat_out[..., 1:], quat_out[..., :1]], dim=-1)
-    return quat_out
-
-
 def quaternion_multiply(quaternion1, quaternion0):
-    """Return multiplication of two quaternions.
-
-    >>> q = quaternion_multiply([1, -2, 3, 4], [-5, 6, 7, 8])
-    >>> np.allclose(q, [-44, -14, 48, 28])
-    True
-
+    """
+    Return multiplication of two quaternions.
     """
     x0, y0, z0, w0 = quaternion0
     x1, y1, z1, w1 = quaternion1
@@ -606,47 +506,23 @@ def quaternion_multiply(quaternion1, quaternion0):
 
 
 def quaternion_conjugate(quaternion):
-    """Return conjugate of quaternion.
-
-    >>> q0 = random_quaternion()
-    >>> q1 = quaternion_conjugate(q0)
-    >>> q1[3] == q0[3] and all(q1[:3] == -q0[:3])
-    True
-
+    """
+    Return conjugate of quaternion.
     """
     return np.array((-quaternion[0], -quaternion[1],
                         -quaternion[2], quaternion[3]), dtype=np.float64)
 
 
 def quaternion_inverse(quaternion):
-    """Return inverse of quaternion.
-
-    >>> q0 = random_quaternion()
-    >>> q1 = quaternion_inverse(q0)
-    >>> np.allclose(quaternion_multiply(q0, q1), [0, 0, 0, 1])
-    True
-
+    """
+    Return inverse of quaternion.
     """
     return quaternion_conjugate(quaternion) / np.dot(quaternion, quaternion)
 
 
 def quaternion_slerp(quat0, quat1, fraction, spin=0, shortestpath=True):
-    """Return spherical linear interpolation between two quaternions.
-
-    >>> q0 = random_quaternion()
-    >>> q1 = random_quaternion()
-    >>> q = quaternion_slerp(q0, q1, 0.0)
-    >>> np.allclose(q, q0)
-    True
-    >>> q = quaternion_slerp(q0, q1, 1.0, 1)
-    >>> np.allclose(q, q1)
-    True
-    >>> q = quaternion_slerp(q0, q1, 0.5)
-    >>> angle = math.acos(np.dot(q0, q))
-    >>> np.allclose(2.0, math.acos(np.dot(q0, q1)) / angle) or \
-        np.allclose(2.0, math.acos(-np.dot(q0, q1)) / angle)
-    True
-
+    """
+    Return spherical linear interpolation between two quaternions.
     """
     q0 = unit_vector(quat0[:4])
     q1 = unit_vector(quat1[:4])
@@ -671,46 +547,3 @@ def quaternion_slerp(quat0, quat1, fraction, spin=0, shortestpath=True):
     return q0
 
 
-def random_quaternion(rand=None):
-    """Return uniform random unit quaternion.
-
-    rand: array like or None
-        Three independent random variables that are uniformly distributed
-        between 0 and 1.
-
-    >>> q = random_quaternion()
-    >>> np.allclose(1.0, vector_norm(q))
-    True
-    >>> q = random_quaternion(np.random.random(3))
-    >>> q.shape
-    (4,)
-
-    """
-    if rand is None:
-        rand = np.random.rand(3)
-    else:
-        assert len(rand) == 3
-    r1 = np.sqrt(1.0 - rand[0])
-    r2 = np.sqrt(rand[0])
-    pi2 = math.pi * 2.0
-    t1 = pi2 * rand[1]
-    t2 = pi2 * rand[2]
-    return np.array((np.sin(t1)*r1,
-                        np.cos(t1)*r1,
-                        np.sin(t2)*r2,
-                        np.cos(t2)*r2), dtype=np.float64)
-
-
-def random_rotation_matrix(rand=None):
-    """Return uniform random rotation matrix.
-
-    rnd: array like
-        Three independent random variables that are uniformly distributed
-        between 0 and 1 for each returned quaternion.
-
-    >>> R = random_rotation_matrix()
-    >>> np.allclose(np.dot(R.T, R), np.identity(4))
-    True
-
-    """
-    return quaternion_matrix(random_quaternion(rand))

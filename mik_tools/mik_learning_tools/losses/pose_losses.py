@@ -22,7 +22,7 @@ class ModelPoseLoss(torch.nn.Module):
             X_1 (torch.Tensor): of shape (..., 4, 4) representing the SE(3) pose 1
             X_2 (torch.Tensor): of shape (..., 4, 4) representing the SE(3) pose 2
         Returns:
-            losses (torch.Tensor): of shape (...,)
+            losses (torch.Tensor): of shape (..., )
         """
         # import pdb; pdb.set_trace()
         points_1 = transform_points_3d(self.model_points, X_1, only_transform_are_batched=True) # (..., N, 3)
@@ -33,6 +33,23 @@ class ModelPoseLoss(torch.nn.Module):
             loss = points_loss.mean(dim=-1) # (...,)
         else:
             loss = self.criterion(points_1, points_2)
+        return loss
+
+    def batched_pose_loss(self, X_1: torch.Tensor, X_2: torch.Tensor) -> torch.Tensor:
+        """
+        Compute the loss between two differently batched sets of poses according to the object model.
+        Note: This is highly computational expensive since we need to compute the loss for each element in 1 to each element in 2
+        Args:
+            X_1 (torch.Tensor): of shape (B, 4, 4) representing the SE(3) pose 1
+            X_2 (torch.Tensor): of shape (K, 4, 4) representing the SE(3) pose 2
+        Returns:
+            losses (torch.Tensor): of shape (B, K) #loss for each pose pair in the provided tensors
+        """
+        B = X_1.shape[0]
+        K = X_2.shape[0]
+        X_1_augmented = X_1.unsqueeze(dim=1).repeat_interleave(repeats=K, dim=1)# (B, K, 4, 4,)
+        X_2_augmented = X_2.unsqueeze(dim=0).repeat_interleave(repeats=B, dim=0)# (B, K, 4, 4,)
+        loss = self.forward(X_1_augmented, X_2_augmented) # (B, K)
         return loss
 
 
@@ -48,6 +65,17 @@ def debug_pose_loss():
     print('Loss value:', loss_value)
 
 
+def debug_batched_pose_loss():
+    from mik_tools import tr
+    model_points = torch.tensor(np.random.uniform(-10, 10, (50, 3)), dtype=torch.float32)
+    pose_loss = ModelPoseLoss(model_points)
+    X_1 = tr.random_transform_matrix(shape=50, as_tensor=True)
+    X_2 = tr.random_transform_matrix(shape=20, as_tensor=True)
+    loss_value = pose_loss.batched_pose_loss(X_1, X_2)
+    print(loss_value.shape)
+
+
 if __name__ == '__main__':
     # Debug
     debug_pose_loss()
+    debug_batched_pose_loss()
