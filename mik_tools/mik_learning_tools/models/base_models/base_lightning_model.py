@@ -22,7 +22,7 @@ class LightningBaseModel(LightningModule, abc.ABC):
         self._log_dir = None
         self.activation = activation
         self.loaded_version = None
-        self.save_hyperparameters()
+        self.save_hyperparameters(ignore=self._get_ignored_hyperparameters())
 
     @classmethod
     def get_name(cls):
@@ -65,6 +65,12 @@ class LightningBaseModel(LightningModule, abc.ABC):
     @abc.abstractmethod
     def _step(self, batch, batch_idx, phase='train'):
         pass
+
+    def _get_ignored_hyperparameters(self):
+        """
+        Returns: list of 'str' containing the names of the argument hyperparameters to be excluded from logging
+        """
+        return []
 
     @staticmethod
     def add_model_specific_args(parent_parser):
