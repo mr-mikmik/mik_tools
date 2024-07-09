@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 from segment_anything import SamAutomaticMaskGenerator, sam_model_registry, SamPredictor
 
 from mik_tools.camera_tools.img_utils import project_point_to_image
-from mik_tools.camera_tools.sam.sam_utils import get_sam_checkpoint, show_points, show_mask, plot_sam_masks
+from mik_tools.camera_tools.sam.sam_utils import get_sam_checkpoint, show_points, show_mask, plot_sam_masks, show_box
 
 
 class SAMWrapper:
@@ -17,7 +17,7 @@ class SAMWrapper:
 
         self.sam_predictor = SamPredictor(self.sam)
 
-    def segment(self, img: np.ndarray, point_coords: np.ndarray, point_labels: np.ndarray = None, vis: bool = False):
+    def segment(self, img: np.ndarray, point_coords: np.ndarray, point_labels: np.ndarray = None, box: np.ndarray = None, vis: bool = False):
         """
 
         :param img: numpy array of shape (W, H, 3) as format uint8 i.e. 0-255
@@ -37,15 +37,17 @@ class SAMWrapper:
             plt.figure(figsize=(10, 10))
             plt.imshow(img)
             show_points(point_coords, point_labels, plt.gca())
+            if box is not None:
+                show_box(box, plt.gca())
             plt.axis('off')
             plt.show()
 
         self.sam_predictor.set_image(img)
-        masks, scores, logits = self.sam_predictor.predict(point_coords=point_coords, point_labels=point_labels,
+        masks, scores, logits = self.sam_predictor.predict(point_coords=point_coords, point_labels=point_labels, box=box,
                                                            multimask_output=True)
 
         if vis:
-            axes = plot_sam_masks(img, point_coords, point_labels, masks, scores, logits)
+            axes = plot_sam_masks(img, point_coords, point_labels, masks, scores, logits, box=box)
             plt.show()
 
         return masks, scores, logits

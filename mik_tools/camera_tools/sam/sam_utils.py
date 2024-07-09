@@ -47,7 +47,7 @@ def show_box(box, ax):
     ax.add_patch(plt.Rectangle((x0, y0), w, h, edgecolor='green', facecolor=(0, 0, 0, 0), lw=2))
 
 
-def plot_sam_masks(img, point_coords, point_labels, masks, scores, logits):
+def plot_sam_masks(img, point_coords, point_labels, masks, scores, logits, box=None):
     fig, axes = plt.subplots(1, len(masks), figsize=(5 * len(masks), 5))
 
     for i, (mask, score) in enumerate(zip(masks, scores)):
@@ -55,6 +55,8 @@ def plot_sam_masks(img, point_coords, point_labels, masks, scores, logits):
         ax.imshow(img)
         show_mask(mask, ax, random_color=False)
         show_points(point_coords, point_labels, ax)
+        if box is not None:
+            show_box(box, ax)
         ax.set_title(f"Mask {i + 1}, Score: {score:.3f}", fontsize=18)
         ax.axis('off')
 
