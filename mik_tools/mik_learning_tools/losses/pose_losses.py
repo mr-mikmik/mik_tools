@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
+from tqdm import tqdm
 
 from mik_tools import transform_points_3d, tr, pose_to_matrix, matrix_to_pose
 
@@ -35,7 +36,7 @@ class ModelPoseLoss(torch.nn.Module):
             loss = self.criterion(points_1, points_2)
         return loss
 
-    def batched_pose_loss(self, X_1: torch.Tensor, X_2: torch.Tensor) -> torch.Tensor:
+    def batched_pose_loss(self, X_1: torch.Tensor, X_2: torch.Tensor, batch_size=None) -> torch.Tensor:
         """
         Compute the loss between two differently batched sets of poses according to the object model.
         Note: This is highly computational expensive since we need to compute the loss for each element in 1 to each element in 2
@@ -47,10 +48,24 @@ class ModelPoseLoss(torch.nn.Module):
         """
         B = X_1.shape[0]
         K = X_2.shape[0]
-        X_1_augmented = X_1.unsqueeze(dim=1).repeat_interleave(repeats=K, dim=1)# (B, K, 4, 4,)
-        X_2_augmented = X_2.unsqueeze(dim=0).repeat_interleave(repeats=B, dim=0)# (B, K, 4, 4,)
-        loss = self.forward(X_1_augmented, X_2_augmented) # (B, K)
-        return loss
+        losses = []
+        if batch_size is None:
+            batch_size = B
+        num_batches = B // batch_size
+        last_batch_size = B - num_batches*batch_size
+        X_2_augmented = X_2.unsqueeze(dim=0).repeat_interleave(repeats=batch_size, dim=0)# (batch_size, K, 4, 4)
+        for i in tqdm(range(num_batches), desc='batched_pose_loss'):
+            X_1_augmented = X_1[i*batch_size:(i+1)*batch_size].unsqueeze(dim=1).repeat_interleave(repeats=K, dim=1)# (batch_size, K, 4, 4)
+            loss = self.forward(X_1_augmented, X_2_augmented) # (batch_size, K)
+            losses.append(loss)
+        # last
+        if last_batch_size > 0:
+            X_2_augmented = X_2.unsqueeze(dim=0).repeat_interleave(repeats=last_batch_size, dim=0)  # (last_batch_size, K, 4, 4)
+            X_1_augmented = X_1[-last_batch_size:].unsqueeze(dim=1).repeat_interleave(repeats=K,dim=1)  # (last_batch_size, K, 4, 4)
+            loss = self.forward(X_1_augmented, X_2_augmented)  # (last_batch_size, K)
+            losses.append(loss)
+        losses = torch.cat(losses, dim=0) # (B, K)
+        return losses
 
 
 def debug_pose_loss():
