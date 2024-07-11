@@ -51,18 +51,20 @@ class LightningDatasetWrapper(pl.LightningDataModule):
         return train_loader
 
     def val_dataloader(self):
-        val_loader = self._get_loader(self.val_data, self.batch_size)
+        val_loader = self._get_loader(self.val_data, self.batch_size, shuffle=False)
         return val_loader
 
     def test_dataloader(self):
-        test_loader = self._get_loader(self.test_data, self.batch_size)
+        test_loader = self._get_loader(self.test_data, self.batch_size, shuffle=False)
         return test_loader
 
-    def _get_loader(self, data, batch_size):
+    def _get_loader(self, data, batch_size, shuffle=None):
+        if shuffle is None:
+            shuffle = self.shuffle
         if batch_size is None:
             batch_size = len(data)
         batch_size = min(batch_size, len(data))
-        loader = DataLoader(data, batch_size=batch_size, num_workers=self.num_workers, drop_last=self.drop_last, pin_memory=self.pin_memory, shuffle=self.shuffle)
+        loader = DataLoader(data, batch_size=batch_size, num_workers=self.num_workers, drop_last=self.drop_last, pin_memory=self.pin_memory, shuffle=shuffle)
         return loader
 
     @staticmethod
