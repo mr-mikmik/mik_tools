@@ -110,7 +110,7 @@ def batched_img_method_decorator(function):
     """
 
     def batched_img_operation_wrapper(self, x):
-        return batched_img_operation(function, x, self=self)
+        return batched_img_operation_self(function, x, self=self)
 
     return batched_img_operation_wrapper
 
