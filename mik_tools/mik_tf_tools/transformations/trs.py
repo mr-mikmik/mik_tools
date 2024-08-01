@@ -29,13 +29,6 @@ def rotation_to_transform(rotation_matrix: Union[torch.tensor, np.ndarray]) -> U
     return transform_matrix
 
 
-
-
-
-
-
-
-
 def euler_matrix(ai, aj, ak, axes='sxyz'):
     """
     Return homogeneous rotation matrix from Euler angles and axis sequence.
@@ -198,14 +191,9 @@ def quaternion_about_axis(angle:Union[torch.Tensor, np.ndarray], axis:Union[torc
     Return quaternion for rotation about axis.
     Args:
         angle (np.ndarray or torch.Tensor): of shape (...)
-        axis ():
-
+        axis (np.ndarray or torch.Tensor): of shape (...,3)
     Returns:
-
-    >>> q = quaternion_about_axis(0.123, (1, 0, 0))
-    >>> np.allclose(q, [0.06146124, 0, 0, 0.99810947])
-    True
-
+        quaternion (np.ndarray or torch.Tensor): of shape (...,4)
     """
     if torch.is_tensor(axis):
         quaternion = quaternion_about_axis_tensor(angle=angle, axis=axis)
