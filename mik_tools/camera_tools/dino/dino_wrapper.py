@@ -1,18 +1,23 @@
 import torch
+import torch.nn as nn
 
 from mik_tools.mik_learning_tools import batched_img_method_decorator
 from .dino_utils import dino_process_img, dino_descriptor_sizes
 
 
-class DINOWrapper:
+class DINOWrapper(nn.Module):
 
-    def __init__(self, model_name='dinov2_vitl14'):
+    def __init__(self, model_name='dinov2_vitl14', freeze=True):
+        super().__init__()
         self.model_name = model_name
+        self.freeze = freeze
         assert self.model_name in dino_descriptor_sizes.keys(), f'model_name {self.model_name} not availble. Choose from {dino_descriptor_sizes.keys()}'
         self.num_features = dino_descriptor_sizes[self.model_name]
         self.dino_model = torch.hub.load(repo_or_dir="facebookresearch/dinov2", model=self.model_name)
+        if self.freeze:
+            self.dino_model.eval()
 
-    def __call__(self, *args, **kwargs):
+    def forward(self, *args, **kwargs):
         return self.dino_model(*args, **kwargs)
 
     @batched_img_method_decorator
