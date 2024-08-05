@@ -38,7 +38,10 @@ def batched_index_select_array(X:np.ndarray, indxs:np.ndarray) -> np.ndarray:
     in_shape = X.shape
     batch_dims = indxs.shape
     num_batch_dims = len(batch_dims)
-    extra_dims = in_shape[num_batch_dims+1:]
+    extra_dims = in_shape[len(batch_dims) + 1:]
+    if num_batch_dims == 0:
+        X = np.expand_dims(X, axis=0)
+        num_batch_dims = 1
     X_r = X.reshape(-1, *in_shape[num_batch_dims:]) # (B, K, <extra_dims>)
     indxs_flat = indxs.flatten() # (B,)
     X_selected = X_r[np.arange(len(indxs_flat)), indxs_flat] # (B, <extra_dims>)
@@ -58,7 +61,10 @@ def batched_index_select_tensor(X: torch.Tensor, indxs:torch.Tensor) -> torch.Te
     in_shape = X.shape
     batch_dims = indxs.shape
     num_batch_dims = len(batch_dims)
-    extra_dims = in_shape[num_batch_dims+1:]
+    extra_dims = in_shape[len(batch_dims)+1:]
+    if num_batch_dims == 0:
+        X = X.unsqueeze(0)
+        num_batch_dims = 1
     X_r = X.flatten(end_dim=num_batch_dims-1) # (B, K, <extra_dims>)
     indxs_flat = indxs.flatten() # (B,)
     X_selected = X_r[torch.arange(len(indxs_flat)), indxs_flat] # (B, <extra_dims>)
