@@ -420,7 +420,7 @@ def quaternion_from_matrix_batched_tensor(matrix_in: torch.Tensor) -> torch.Tens
         matrix: Transformation matrix matrices as tensor of shape (..., 4, 4).
 
     Returns:
-        quaternions with real part first, as tensor of shape (..., 4).
+        quaternions with real part first, as tensor of shape (..., 4). as [qx, qy, qz, qw] i.e. [0, 0, 0, 1] is unit quat.
     """
     if matrix_in.size(-1) == 4 or matrix_in.size(-2) == 4:
         matrix = matrix_in[..., :3, :3]
@@ -476,8 +476,9 @@ def quaternion_from_matrix_batched_tensor(matrix_in: torch.Tensor) -> torch.Tens
         F.one_hot(q_abs.argmax(dim=-1), num_classes=4) > 0.5, :
     ].reshape(batch_dim + (4,))
     # standardize the output
-    quaternions = torch.where(quaternions[..., 0:1] < 0, -quaternions, quaternions)
-    return quaternions
+    quaternions_wxyz = torch.where(quaternions[..., 0:1] < 0, -quaternions, quaternions)
+    quaternions_xyzw = torch.cat([quaternions_wxyz[...,1:], quaternions[...,:1]], dim=-1)
+    return quaternions_xyzw
 
 
 def quaternion_multiply(quaternion1, quaternion0):
