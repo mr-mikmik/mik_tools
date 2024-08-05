@@ -11,6 +11,8 @@ class TrajectoryDataset(LegendedDataset):
         self.filter_out_done = filter_out_done
         self.load_trajectories = load_trajectories
         self.trajectory_lines = None
+        self.trajectory_index_key = self._get_trajectory_index_key()
+        self.trajectory_step_key = self._get_trajectory_step_key()
         super().__init__(*args, **kwargs)
         if self.load_trajectories:
             self._get_trajectories_lines()
@@ -79,12 +81,18 @@ class TrajectoryDataset(LegendedDataset):
             sample_codes = dl.index.to_numpy()
         return sample_codes
 
+    def _get_trajectory_index_key(self):
+        return 'TrajectoryIndex'
+
+    def _get_trajectory_step_key(self):
+        return 'TrajectoryStep'
+
     def _get_trajectories_lines(self, dl=None):
         trajectory_lines = {}
         if dl is None:
             dl = self.dl
-        trajectory_indxs = dl['TrajectoryIndex']
-        trajectory_steps = dl['TrajectoryStep']
+        trajectory_indxs = dl[self.trajectory_index_key]
+        trajectory_steps = dl[self.trajectory_step_key]
         unique_trajectories = np.unique(trajectory_indxs)
         # filter out trajectories that are done
         if self.filter_out_done:
@@ -99,7 +107,7 @@ class TrajectoryDataset(LegendedDataset):
         if dl is None:
             dl = self.dl
         for trj_indx in trajectory_indxs:
-            dl_traj_i = dl[dl['TrajectoryIndex'] == trj_indx]
+            dl_traj_i = dl[dl[self.trajectory_index_key] == trj_indx]
             # check if any is Done
             if dl_traj_i['Done'].any():
                 pass # do not append this trajectory indx
