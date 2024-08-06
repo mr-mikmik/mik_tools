@@ -484,6 +484,11 @@ def quaternion_from_matrix_batched_tensor(matrix_in: torch.Tensor) -> torch.Tens
 def quaternion_multiply(quaternion1:Union[torch.Tensor, np.ndarray], quaternion0:Union[torch.Tensor, np.ndarray]) -> Union[torch.Tensor, np.ndarray]:
     """
     Return multiplication of two quaternions.
+    Args:
+        quaternion1 (torch.Tensor or np.ndarray): of shape (..., 4) as (qx, qy, qz, qw)
+        quaternion0 (torch.Tensor or np.ndarray): of shape (..., 4) as (qx, qy, qz, qw)
+    Returns:
+        q_out (torch.Tensor or np.ndarray): result of left multiplying q1*q0
     """
     x0, y0, z0, w0 = quaternion0[..., 0], quaternion0[..., 1], quaternion0[..., 2], quaternion0[..., 3]
     x1, y1, z1, w1 = quaternion1[..., 0], quaternion1[..., 1], quaternion1[..., 2], quaternion1[..., 3]
@@ -499,19 +504,38 @@ def quaternion_multiply(quaternion1:Union[torch.Tensor, np.ndarray], quaternion0
     return q_out
 
 
-def quaternion_conjugate(quaternion):
+def quaternion_conjugate(quaternion:Union[torch.Tensor, np.ndarray])->Union[torch.Tensor, np.ndarray]:
     """
     Return conjugate of quaternion.
+    Args:
+        quaternion (torch.Tensor or np.ndarray): of shape (..., 4) as (qx, qy, qz, qw)
+    Returns:
+        q_bar (torch.Tensor or np.ndarray): of shape (..., 4) as (qx, qy, qz, qw) -- conjugate of quaternion
     """
-    return np.array((-quaternion[0], -quaternion[1],
-                        -quaternion[2], quaternion[3]), dtype=np.float64)
+    qx, qy, qz, qw = quaternion[..., 0], quaternion[..., 1], quaternion[..., 2], quaternion[..., 3]
+    q_out = [-qx, -qy, -qz, qw]
+    if torch.is_tensor(quaternion):
+        q_out = torch.stack(q_out, dim=-1)
+    else:
+        q_out = np.stack(q_out, axis=-1)
+    return q_out
 
 
-def quaternion_inverse(quaternion):
+def quaternion_inverse(quaternion:Union[torch.Tensor, np.ndarray])->Union[torch.Tensor, np.ndarray]:
     """
     Return inverse of quaternion.
+    Args:
+        quaternion (torch.Tensor or np.ndarray): of shape (..., 4) as (qx, qy, qz, qw)
+    Returns:
+        q_inv (torch.Tensor or np.ndarray): of shape (..., 4) as (qx, qy, qz, qw) -- inverse of quaternion
     """
-    return quaternion_conjugate(quaternion) / np.dot(quaternion, quaternion)
+    # q_dot = np.dot(quaternion, quaternion)
+    if torch.is_tensor(quaternion):
+        q_dot = torch.einsum('...i,...i->...', quaternion, quaternion).unsqueeze(-1) # (..., 1)
+    else:
+        q_dot = np.expand_dims(np.einsum('...i,...i->...', quaternion, quaternion), axis=-1) # (..., 1)
+    q_conj = quaternion_conjugate(quaternion) # (..., 4)
+    return q_conj / q_dot
 
 
 def quaternion_slerp(quat0, quat1, fraction, spin=0, shortestpath=True):
