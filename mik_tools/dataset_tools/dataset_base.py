@@ -10,8 +10,7 @@ from tqdm import tqdm
 import copy
 
 from mik_tools.dataset_tools.aux.data_transformations import TensorTypeTr
-from mik_tools.aux.package_utils import PACKAGE_PATH
-
+from mik_tools.aux.package_utils import PACKAGE_PATH, get_dataset_path
 
 
 class DatasetBase(Dataset, abc.ABC):
@@ -289,8 +288,9 @@ class DatasetBase(Dataset, abc.ABC):
             real_data_name = data_path.split('/')[-1]
         else:
             # we just provide the data name
-            project_path = self._get_project_path()
-            data_path = os.path.join(project_path, 'data', data_name)
+            # project_path = self._get_project_path()
+            # data_path = os.path.join(project_path, 'data', data_name)
+            data_path = get_dataset_path(data_name)
             real_data_name = data_name
         return data_path, real_data_name
 
