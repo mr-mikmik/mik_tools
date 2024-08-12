@@ -159,11 +159,15 @@ class DatasetBase(Dataset, abc.ABC):
     def _pre_process_hook(self):
         pass
 
+    def _process_hook(self):
+        pass
+
     def process(self):
         if not os.path.exists(self.processed_data_path) or not self.load_cache or self.contribute_mode:
             print('Processing the data and saving it to {}'.format(self.processed_data_path))
             os.makedirs(self.processed_data_path, exist_ok=True)
             # process the data and save it as .pt files
+            self._process_hook()
             for i in tqdm(range(self.__len__())):
                 requires_processing_i = True
                 expected_sample_path_i = self._get_sample_path(i)
