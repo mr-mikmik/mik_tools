@@ -39,6 +39,11 @@ class DINOWrapper(nn.Module):
             img (torch.Tensor): of shape (..., num_channels, w, h)
         Returns:
             features (torch.Tensor): of shape (..., num_features)
+
+        NOTE: It turns out that a DINO call consumes a lot of memory. If gradients are not needed,
+        then calls to this method should be wrapped into a no_grad context:
+            with torch.no_grad():
+                features = dino_wrapper.get_features(img)
         """
         img_proc = dino_process_img(img, has_channels=True)
         features = self.get_features_raw(img_proc)
