@@ -22,6 +22,17 @@ class DilateTr(object):
         return x_tr
 
 
+class MeanFilterTr(object):
+    def __init__(self, kernel_size):
+        self.kernel_size = kernel_size
+        self.kernel = (1/self.kernel_size**2) * torch.ones((1, 1, self.kernel_size, self.kernel_size))
+
+    def __call__(self, x):
+        # x: of shape (..., num_channels, w, h)
+        x_tr = F.conv2d(x, self.kernel.to(x.device), padding=(self.kernel_size // 2, self.kernel_size // 2))
+        return x_tr
+
+
 class ErodeTr(object):
     def __init__(self, kernel_size):
         self.kernel_size = kernel_size
