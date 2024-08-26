@@ -98,7 +98,8 @@ class TrajectoryDataset(LegendedDataset):
         if self.filter_out_done:
             unique_trajectories = self._filter_out_done_trajectories(unique_trajectories, dl=dl)
         for trj_indx in unique_trajectories:
-            trajectory_lines[trj_indx] = dl[trajectory_indxs == trj_indx].index.to_list()
+            # NOTE: We load the trajectory in order of the trajectory steps!
+            trajectory_lines[trj_indx] = dl[trajectory_indxs == trj_indx].sort_values(self.trajectory_step_key).index.to_list()
         self.trajectory_lines = trajectory_lines
         return trajectory_lines
 
