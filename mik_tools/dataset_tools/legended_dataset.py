@@ -10,6 +10,8 @@ class LegendedDataset(DatasetBase):
 
     def __init__(self, data_name, **kwargs):
         self.data_path, self.data_name = self._get_data_path(data_name)
+        if not os.path.exists(self.data_path):
+            raise FileNotFoundError(f'We have not found the dataset named {self.data_name} with path {self.data_path}')
         self.dl = self._get_datalegend()
         super().__init__(data_name, **kwargs)
 

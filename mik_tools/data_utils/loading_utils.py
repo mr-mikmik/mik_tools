@@ -9,6 +9,8 @@ from mik_tools.camera_tools.pointcloud_utils import load_pointcloud as load_pc
 
 def load_datalegend(data_path):
     dl_path = data_path_tools.get_datalegend_path(data_path)
+    if not os.path.isfile(dl_path):
+        raise FileNotFoundError(f'Datalenged not found at {dl_path}')
     dl = pd.read_csv(dl_path)
     return dl
 
