@@ -6,9 +6,14 @@ import matplotlib.pyplot as plt
 from mik_tools.aux.package_utils import MODELS_PATH
 
 
-def get_sam_checkpoint():
-    model_name = 'sam_vit_h_4b8939'
-    model_path = os.path.join(MODELS_PATH, 'sam', f'{model_name}.pth')
+def get_sam_checkpoint(key='vit_h'):
+    model_names = {
+        'vit_h':'sam_vit_h_4b8939.pth',
+        'sam2-hiera-large':'sam2_hiera_large.pt',
+        'sam2-hiera-base-plus':'sam2_hiera_base_plus.pt',
+                   }
+    model_name = model_names[key]
+    model_path = os.path.join(MODELS_PATH, 'sam', model_name)
     return model_path
 
 
