@@ -1,1 +1,1 @@
-from mik_tools.camera_tools.sam.sam_wrapper import SAMWrapper
+from mik_tools.camera_tools.sam.sam_wrapper import SAMWrapper, SAM2Wrapper

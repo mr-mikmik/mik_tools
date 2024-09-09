@@ -2,6 +2,8 @@ import numpy as np
 import torch
 from matplotlib import pyplot as plt
 from segment_anything import SamAutomaticMaskGenerator, sam_model_registry, SamPredictor
+from sam2.build_sam import build_sam2
+from sam2.sam2_image_predictor import SAM2ImagePredictor
 
 from mik_tools.camera_tools.img_utils import project_point_to_image
 from mik_tools.camera_tools.sam.sam_utils import get_sam_checkpoint, show_points, show_mask, plot_sam_masks, show_box
@@ -10,12 +12,18 @@ from mik_tools.camera_tools.sam.sam_utils import get_sam_checkpoint, show_points
 class SAMWrapper:
 
     def __init__(self):
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.sam = self._load_sam_model()
+        self.sam_predictor = self._load_predictor()
 
-        self.sam = sam_model_registry['vit_h'](checkpoint=get_sam_checkpoint())
-        self.sam.to(device)
+    def _load_sam_model(self):
+        sam = sam_model_registry['vit_h'](checkpoint=get_sam_checkpoint())
+        sam.to(self.device)
+        return sam
 
-        self.sam_predictor = SamPredictor(self.sam)
+    def _load_predictor(self):
+        predictor = SamPredictor(self.sam)
+        return predictor
 
     def segment(self, img: np.ndarray, point_coords: np.ndarray, point_labels: np.ndarray = None, box: np.ndarray = None, vis: bool = False):
         """
@@ -67,3 +75,15 @@ class SAMWrapper:
         out = self.segment(img=img, point_coords=point_uv, point_labels=point_labels, vis=vis) # (masks, scores, logits)
         return out
 
+
+class SAM2Wrapper(SAMWrapper):
+    def _load_sam_model(self):
+        checkpoint_path = get_sam_checkpoint(key='sam2-hiera-large')
+        model_cfg = "sam2_hiera_l.yaml"
+        sam2_model = build_sam2(model_cfg, checkpoint_path, device=self.device)
+        sam2_model.to(self.device)
+        return sam2_model
+
+    def _load_predictor(self):
+        predictor = SAM2ImagePredictor(self.sam)
+        return predictor
