@@ -134,11 +134,16 @@ def euler_from_quaternion(quaternion, axes='sxyz'):
     return euler_from_matrix(quaternion_matrix(quaternion), axes)
 
 
-def quaternion_from_euler(ai, aj, ak, axes='sxyz'):
+def quaternion_from_euler(ai, aj, ak, axes='sxyz') -> np.ndarray:
     """
     Return quaternion from Euler angles and axis sequence.
     ai, aj, ak : Euler's roll, pitch and yaw angles
+        ai: float or numpy array of shape (...,)
+        aj: float or numpy array of shape (...,)
+        ak: float or numpy array of shape (...,)
     axes : One of 24 axis sequences as string or encoded tuple
+    out:
+        quaternion (np.ndarray) of shape (..., 4)
     """
     try:
         firstaxis, parity, repetition, frame = _AXES2TUPLE[axes.lower()]
@@ -158,30 +163,31 @@ def quaternion_from_euler(ai, aj, ak, axes='sxyz'):
     ai /= 2.0
     aj /= 2.0
     ak /= 2.0
-    ci = math.cos(ai)
-    si = math.sin(ai)
-    cj = math.cos(aj)
-    sj = math.sin(aj)
-    ck = math.cos(ak)
-    sk = math.sin(ak)
+    ci = np.cos(ai)
+    si = np.sin(ai)
+    cj = np.cos(aj)
+    sj = np.sin(aj)
+    ck = np.cos(ak)
+    sk = np.sin(ak)
     cc = ci*ck
     cs = ci*sk
     sc = si*ck
     ss = si*sk
 
-    quaternion = np.empty((4, ), dtype=np.float64)
+    batch_dims = () if type(ai) == float else ai.shape
+    quaternion = np.empty(batch_dims + (4, ), dtype=np.float64)
     if repetition:
-        quaternion[i] = cj*(cs + sc)
-        quaternion[j] = sj*(cc + ss)
-        quaternion[k] = sj*(cs - sc)
-        quaternion[3] = cj*(cc - ss)
+        quaternion[..., i] = cj*(cs + sc)
+        quaternion[..., j] = sj*(cc + ss)
+        quaternion[..., k] = sj*(cs - sc)
+        quaternion[..., 3] = cj*(cc - ss)
     else:
-        quaternion[i] = cj*sc - sj*cs
-        quaternion[j] = cj*ss + sj*cc
-        quaternion[k] = cj*cs - sj*sc
-        quaternion[3] = cj*cc + sj*ss
+        quaternion[..., i] = cj*sc - sj*cs
+        quaternion[..., j] = cj*ss + sj*cc
+        quaternion[..., k] = cj*cs - sj*sc
+        quaternion[..., 3] = cj*cc + sj*ss
     if parity:
-        quaternion[j] *= -1
+        quaternion[..., j] *= -1
 
     return quaternion
 
