@@ -2,8 +2,11 @@ import numpy as np
 import torch
 from matplotlib import pyplot as plt
 from segment_anything import SamAutomaticMaskGenerator, sam_model_registry, SamPredictor
-from sam2.build_sam import build_sam2
-from sam2.sam2_image_predictor import SAM2ImagePredictor
+try:
+    from sam2.build_sam import build_sam2
+    from sam2.sam2_image_predictor import SAM2ImagePredictor
+except ModuleNotFoundError:
+    pass
 
 from mik_tools.camera_tools.img_utils import project_point_to_image
 from mik_tools.camera_tools.sam.sam_utils import get_sam_checkpoint, show_points, show_mask, plot_sam_masks, show_box
