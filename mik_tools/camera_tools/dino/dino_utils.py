@@ -32,7 +32,10 @@ def dino_process_img(img: torch.Tensor, has_channels: bool=False, normalization_
         num_channels = 1
         batch_dims = img_shape[:-2]
         img = img.unsqueeze(-3)  # (..., 1, W, H)
-    img_flat = img.flatten(end_dim=-4)  # (N, num_channels, W, H)
+    if len(batch_dims) > 0:
+        img_flat = img.flatten(end_dim=-4)  # (N, num_channels, W, H)
+    else:
+        img_flat = img.unsqueeze(0)  # (1, num_channels, W, H)
     img_flat = F.interpolate(img_flat, size=(dino_img_size, dino_img_size), mode='bilinear')  # (..., num_channels, 256, 256)
     if num_channels == 1:
         img_flat = img_flat.repeat_interleave(3, dim=-3)  # (N, 3, W, H)
