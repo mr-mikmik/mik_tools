@@ -40,7 +40,7 @@ class CNOS(object):
         self.dino_wrapper = self._init_dino()
         self.renered_zs, self.rendered_imgs = self._embed_rendered_dataset()
 
-    def mask(self, img: np.ndarray, visualize=False) -> np.ndarray:
+    def mask(self, img: np.ndarray, visualize=False, top_k=4) -> np.ndarray:
         """
         Mask an image
         Args:
@@ -71,7 +71,6 @@ class CNOS(object):
         mask_max_scores, mask_max_scores_indxs = sim_matrix.max(dim=0)
         # mask_scores = mask_max_scores
         mask_scores = sim_matrix.mean(dim=0)
-        top_k = 4
         topk_scores, topk_mask_indxs = torch.topk(mask_scores, top_k)
         topk_rendered_indxs = mask_max_scores_indxs[topk_mask_indxs]
 
@@ -80,8 +79,9 @@ class CNOS(object):
         if visualize:
             # create two figures
             fig, ax = plt.subplots(1, 3, figsize=(15, 5))
-            ax[0].imshow(img)
-            ax[1].imshow(img)
+            img_reshaped = img.transpose(1, 2, 0) # (h, w, 3)
+            ax[0].imshow(img_reshaped)
+            ax[1].imshow(img_reshaped)
             ax[2].imshow(best_mask)
             show_anns(sam_out, ax=ax[1])
             plt.axis('off')
