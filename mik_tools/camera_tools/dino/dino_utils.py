@@ -14,7 +14,7 @@ dino_descriptor_sizes = {
 def dino_process_img(img: torch.Tensor, has_channels: bool=False, normalization_tr=None, dino_img_size=224) -> torch.Tensor:
     """
     Transform an image to a desired Resnet format.
-    ResNet expects a RGB 256x256 image in a normalized range.
+    ResNet expects a RGB 224x224 image in a normalized range.
     Args:
         img (...,W, H): image to be converted to resnet format
         has_channels (bool): whether the image has channels. If true, img: (..., num_channels, W, H)
