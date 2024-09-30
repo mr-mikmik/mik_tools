@@ -64,9 +64,9 @@ class CNOS(object):
             dino_imgs.append(dino_img_i)
         dino_imgs = torch.stack(dino_imgs)
         # embed the sam generated masks
-        zs = self._embed(dino_imgs)  # (num_masks, embed_dim)
+        maks_zs = self._embed(dino_imgs)  # (num_masks, embed_dim)
         # compute the scores
-        sim_matrix = compute_mask_iou_score(self.renered_zs, zs)  # (num_rendered, num_masks)
+        sim_matrix = torch.einsum('rz,mz->rm', self.renered_zs, maks_zs)  # (num_rendered, num_masks)
 
         mask_max_scores, mask_max_scores_indxs = sim_matrix.max(dim=0)
         # mask_scores = mask_max_scores
