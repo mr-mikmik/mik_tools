@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 
+from mik_tools.mik_tf_tools.tf_tools import transform_matrix_inverse, transform_points_3d
 
 def project_depth_image(depth_img, K, usvs=None):
     """
@@ -170,3 +171,54 @@ def project_point_to_image(point_cof, K, as_int=False):
         point_v = point_v.round().astype(int)
     point_uv = np.stack([point_u, point_v], axis=-1)
     return point_uv
+
+
+def stereo_vision_triangulation(uv_1, uv_2, w_X_cf1, w_X_cf2, K1, K2):
+    """
+    Return the 3D coordinates of a point in the world frame given its projections in two cameras
+    i.e. stereophotogrammetry
+    :param uv_1: (np.ndarray) (2,) coordinates of the point in the first camera frame
+    :param uv_2: (np.ndarray) (2,) coordinates of the point in the second camera frame
+    :param w_X_cf1: (np.ndarray) (4,4) pose of the first camera in the world frame
+    :param w_X_cf2: (np.ndarray) (4,4) pose of the second camera in the world frame
+    :param K1: (np.ndarray) (3,3) intrinsic matrix of the first camera
+    :param K2: (np.ndarray) (3,3) intrinsic matrix of the second camera
+    :return: point_w (np.ndarray) (3,) coordinates of the point in the world frame
+    """
+    # NOTE: The point uv_1 and the point uv_2 may be not exacly the same point in the world frame,
+    # Here we will use the mid-point method to estimate the 3D point
+    # First, we will estimate the 3D point in the first camera frame
+    point1_cf1 = project_depth_points(uv_1[0], uv_1[1], 1, K1)
+    # Second, we will estimate the 3D point in the second camera frame
+    point2_cf2 = project_depth_points(uv_2[0], uv_2[1], 1, K2)
+    # get the vectors in the world frame
+    point1_w = transform_points_3d(point1_cf1, w_X_cf1, points_have_point_dimension=False)
+    point2_w = transform_points_3d(point2_cf2, w_X_cf2, points_have_point_dimension=False)
+    # compute the two vectors
+    p1 = w_X_cf1[:3, 3]
+    p2 = w_X_cf2[:3, 3]
+    _v1 = point1_w - p1
+    _v2 = point2_w - p2
+    v1 = _v1 / np.linalg.norm(_v1)
+    v2 = _v2 / np.linalg.norm(_v2)
+    # get the mid-point
+    normal = np.cross(v1, v2)
+    n1 = np.cross(v1, normal)
+    n2 = np.cross(v2, normal)
+    c1 = p1 + np.dot((p2-p1), n2) / np.dot(v1, n2) * v1
+    c2 = p2 + np.dot((p1-p2), n1) / np.dot(v2, n1) * v2
+    point_w = 0.5 * (c1 + c2)
+    return point_w
+
+
+def mask_mean_uv(mask):
+    """
+    Obtain the mean uv coordinates of the mask
+    :param mask: (np.ndarray) of shape (w,h) of 0 and 1s
+    :return: uv_mean (np.ndarray) of shape (2,) the mean uv coordinates of the mask
+    """
+    mask = mask.astype(np.float32)
+    mask /= mask.sum()
+    us, vs = get_img_pixel_coordinates(mask)
+    uv_mean = np.array([np.sum(us * mask), np.sum(vs * mask)])
+    return uv_mean
