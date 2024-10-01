@@ -87,6 +87,9 @@ class TrajectoryDataset(LegendedDataset):
     def _get_trajectory_step_key(self):
         return 'TrajectoryStep'
 
+    def _get_scene_key(self):
+        return 'Scene'
+
     def _get_trajectories_lines(self, dl=None):
         trajectory_lines = {}
         if dl is None:
@@ -132,7 +135,7 @@ class TrajectoryDataset(LegendedDataset):
                 scene_names = [self.scene_name]
             else:
                 scene_names = list(self.scene_name)
-            dl_filtered = dl_filtered[dl_filtered['Scene'].isin(scene_names)]
+            dl_filtered = dl_filtered[dl_filtered[self._get_scene_key()].isin(scene_names)]
         return dl_filtered
 
     def _pack_trajectory(self, trajectory_samples):
