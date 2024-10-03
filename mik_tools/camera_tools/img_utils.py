@@ -188,9 +188,9 @@ def stereo_vision_triangulation(uv_1, uv_2, w_X_cf1, w_X_cf2, K1, K2):
     # NOTE: The point uv_1 and the point uv_2 may be not exacly the same point in the world frame,
     # Here we will use the mid-point method to estimate the 3D point
     # First, we will estimate the 3D point in the first camera frame
-    point1_cf1 = project_depth_points(uv_1[0], uv_1[1], 1, K1)
+    point1_cf1 = np.asarray(project_depth_points(uv_1[0], uv_1[1], 1, K1))
     # Second, we will estimate the 3D point in the second camera frame
-    point2_cf2 = project_depth_points(uv_2[0], uv_2[1], 1, K2)
+    point2_cf2 = np.asarray(project_depth_points(uv_2[0], uv_2[1], 1, K2))
     # get the vectors in the world frame
     point1_w = transform_points_3d(point1_cf1, w_X_cf1, points_have_point_dimension=False)
     point2_w = transform_points_3d(point2_cf2, w_X_cf2, points_have_point_dimension=False)
