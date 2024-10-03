@@ -62,3 +62,11 @@ def draw_frame(pose, scale=1.0, viz=None):
     viz += arrows_geoms
     return viz
 
+
+def draw_points(points, color='r', viz=None):
+    # points: (N, 3) numpy array
+    viz = get_default_viz(viz)
+    points_geom = vedo.Points(points, c=color)
+    viz += points_geom
+    return viz
+
