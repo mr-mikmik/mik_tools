@@ -11,12 +11,14 @@ class ModelPoseLoss(torch.nn.Module):
         super().__init__()
         if criterion == 'mean_dist':
             self.criterion = mean_dist_criterion
-        if criterion == 'mse':
+        elif criterion == 'mse':
             self.criterion = mse_criterion
         elif criterion is None:
             self.criterion = mse_criterion
-        else:
+        elif criterion is callable:
             self.criterion = criterion
+        else:
+            raise ValueError(f'Criterion {criterion} not recognized. Please select one of the following: [None, "mean_dist", "mse"] or pass a callable function')
         assert len(model_points.shape) == 2 and model_points.shape[-1] == 3, f'Model points must have shape (N,3) (given {model_points.shape} not valid)'
         self.model_points = nn.Parameter(model_points, requires_grad=False) # store the points as parameter to have them automatically set on the model device
         self.num_points = self.model_points.shape[0]
