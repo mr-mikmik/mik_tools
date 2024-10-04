@@ -97,23 +97,7 @@ class DatasetBase(Dataset, abc.ABC):
             sliced_dataset = self._subsample_dataset(item)
             return sliced_dataset
         else:
-        # elif isinstance(item, int) or isinstance(item, np.int64):
-            # get the sample [i]
-            item_indx = self.item_indxs[item]
-            save_path_i = self._get_sample_path(item_indx)
-            item_i = None
-            # the following loop is used to avoid the error: "UnpicklingError: A load persistent id instruction was encountered,
-            # but no persistent_load function was specified. " We try to load the data multiple times until it works.
-            for i in range(1000):
-                try:
-                    item_i = torch.load(save_path_i, map_location=self.device)
-                except:
-                    continue
-                if item_i is not None:
-                    break
-            if item_i is None:
-                raise RuntimeError(f'We were not able to load {save_path_i}')
-            # item_i = torch.load(save_path_i, map_location=self.device)
+            item_i = self._get_data_item(item)
         # else:
         #     raise NotImplementedError(f'__getitem__ called with unsupported item {item} of type {type(item)}')
         return item_i
@@ -121,6 +105,23 @@ class DatasetBase(Dataset, abc.ABC):
     def __iter__(self):
         for i in range(self.__len__()):
             yield self.__getitem__(i)
+
+    def _get_data_item(self, item):
+        item_indx = self.item_indxs[item]
+        save_path_i = self._get_sample_path(item_indx)
+        item_i = None
+        # the following loop is used to avoid the error: "UnpicklingError: A load persistent id instruction was encountered,
+        # but no persistent_load function was specified. " We try to load the data multiple times until it works.
+        for i in range(1000):
+            try:
+                item_i = torch.load(save_path_i, map_location=self.device)
+            except:
+                continue
+            if item_i is not None:
+                break
+        if item_i is None:
+            raise RuntimeError(f'We were not able to load {save_path_i}')
+        return item_i
 
     def _slice_dataset(self, item):
         """
