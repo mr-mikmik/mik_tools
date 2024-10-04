@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import torch
 from PIL import Image as imm
 import pandas as pd
 from collections import defaultdict
@@ -13,6 +14,13 @@ def record_array(ar, save_path,  scene_name, fc, array_name=None):
     save_path, filename = data_path_tools.split_full_path(full_path)
     filename_only, extension = data_path_tools.split_filename(filename)
     save_array(ar, filename=filename_only, save_path=save_path)
+
+
+def record_tensor(x, save_path, scene_name, fc, tensor_name=None):
+    full_path = data_path_tools.get_tensor_path(save_path=save_path, scene_name=scene_name, fc=fc, tensor_name=tensor_name)
+    save_path, filename = data_path_tools.split_full_path(full_path)
+    filename_only, extension = data_path_tools.split_filename(filename)
+    save_tensor(x, filename=filename_only, save_path=save_path)
 
 
 def record_point_cloud(pc, save_path, scene_name, camera_name, fc):
@@ -170,6 +178,13 @@ def save_array(array, filename, save_path):
         os.makedirs(save_path)
     full_save_path = os.path.join(save_path, '{}.npy'.format(filename))
     np.save(full_save_path, array)
+
+
+def save_tensor(tensor, filename, save_path):
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+    full_save_path = os.path.join(save_path, '{}.pt'.format(filename))
+    torch.save(tensor, full_save_path)
 
 
 def save_controller_info(controller_info, filename, save_path):

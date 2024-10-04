@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 import os
 import pandas as pd
 from PIL import Image
@@ -19,6 +20,12 @@ def load_array(data_path, scene_name, fc, array_name=None):
     full_path = data_path_tools.get_array_path(save_path=data_path, scene_name=scene_name, fc=fc, array_name=array_name)
     ar = np.load(full_path)
     return ar
+
+
+def load_tensor(data_path, scene_name, fc, tensor_name=None, device='cpu'):
+    full_path = data_path_tools.get_tensor_path(save_path=data_path, scene_name=scene_name, fc=fc, tensor_name=tensor_name)
+    tensor = torch.load(full_path, map_location=device, weights_only=True)
+    return tensor
 
 
 def load_point_cloud(data_path, scene_name, camera_name, fc):

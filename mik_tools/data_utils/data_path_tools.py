@@ -44,6 +44,19 @@ def get_array_path(save_path, scene_name, fc, array_name=None):
     return full_path
 
 
+def get_tensor_path(save_path, scene_name, fc, tensor_name=None):
+    if tensor_name is None:
+        tensor_name = 'tensor_data'
+    save_path = os.path.join(save_path, scene_name, tensor_name)
+    if include_scene_name_to_file_name:
+        filename = '{}_tensor_{:06d}'.format(scene_name, fc)
+    else:
+        filename = 'tensor_{:06d}'.format(fc)
+    file_name = '{}.pt'.format(filename)
+    full_path = os.path.join(save_path, file_name)
+    return full_path
+
+
 def get_pointcloud_path(save_path, scene_name, camera_name, fc):
     save_path = os.path.join(save_path, scene_name, camera_name, 'point_cloud_data')
     if include_scene_name_to_file_name:
