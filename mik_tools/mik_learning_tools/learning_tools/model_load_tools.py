@@ -3,9 +3,10 @@ import torch
 import argparse
 
 
-def load_model(Model, load_version, data_path, load_epoch=None, load_step=None, **kwargs):
+def load_model(Model, load_version, data_path, load_epoch=None, load_step=None, model_name=None, **kwargs):
     # kwargs can be used to override laoded model parameters
-    model_name = Model.get_name()
+    if model_name is None:
+        model_name = Model.get_name()
     checkpoint_path = get_checkpoint_path(model_name, load_version, data_path, load_epoch=load_epoch, load_step=load_step)
     model = Model.load_from_checkpoint(checkpoint_path, **kwargs)
     log_path = os.path.join(data_path, 'tb_logs', '{}'.format(model_name), 'version_{}'.format(load_version))
