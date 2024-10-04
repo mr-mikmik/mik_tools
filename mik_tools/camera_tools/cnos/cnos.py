@@ -1,13 +1,7 @@
 import numpy as np
-import open3d as o3d
 import torch
 from typing import Tuple
 import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
-import copy
-import os
-from tqdm.notebook import tqdm
 from segment_anything import SamAutomaticMaskGenerator, sam_model_registry, SamPredictor
 try:
     from sam2.build_sam import build_sam2

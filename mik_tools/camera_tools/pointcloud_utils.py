@@ -1,7 +1,10 @@
 import os
 
 import numpy as np
-import open3d as o3d
+try:
+    import open3d as o3d
+except (ModuleNotFoundError, ImportError):
+    pass
 from open3d.visualization import Visualizer
 import torch
 from scipy.spatial import KDTree

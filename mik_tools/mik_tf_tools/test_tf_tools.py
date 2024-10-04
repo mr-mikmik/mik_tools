@@ -1,5 +1,8 @@
 import numpy as np
-import open3d as o3d
+try:
+    import open3d as o3d
+except (ModuleNotFoundError, ImportError):
+    pass
 
 from mik_tools.mik_tf_tools.tr_trajectory_utils import project_pose_to_plane, get_w_T_plane, unproject_planar_pose, \
     get_theta_between_quats, transform_pose, rotation_along_point_angle_2d
