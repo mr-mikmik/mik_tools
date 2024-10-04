@@ -9,7 +9,14 @@ from mik_tools import transform_points_3d, tr, pose_to_matrix, matrix_to_pose
 class ModelPoseLoss(torch.nn.Module):
     def __init__(self, model_points: torch.Tensor, criterion=None):
         super().__init__()
-        self.criterion = criterion
+        if criterion == 'mean_dist':
+            self.criterion = mean_dist_criterion
+        if criterion == 'mse':
+            self.criterion = mse_criterion
+        elif criterion is None:
+            self.criterion = mse_criterion
+        else:
+            self.criterion = criterion
         assert len(model_points.shape) == 2 and model_points.shape[-1] == 3, f'Model points must have shape (N,3) (given {model_points.shape} not valid)'
         self.model_points = nn.Parameter(model_points, requires_grad=False) # store the points as parameter to have them automatically set on the model device
         self.num_points = self.model_points.shape[0]
@@ -66,6 +73,25 @@ class ModelPoseLoss(torch.nn.Module):
             losses.append(loss)
         losses = torch.cat(losses, dim=0) # (B, K)
         return losses
+
+
+def mean_dist_criterion(points_1, points_2):
+    # points_1: (..., N, 3)
+    # points_2: (..., N, 3)
+    # out: (...)
+    delta_dists = torch.sqrt(torch.pow(points_2 - points_1, 2).sum(dim=-1))  # (..., N)
+    loss = delta_dists.mean(dim=-1)  # (...)
+    return loss
+
+
+def mse_criterion(points_1, points_2):
+    # points_1: (..., N, 3)
+    # points_2: (..., N, 3)
+    # out: (...)
+    delta_dists = torch.pow(points_2 - points_1, 2).sum(dim=-1)  # (..., N)
+    loss = delta_dists.mean(dim=-1)  # (...)
+    return loss
+
 
 
 def debug_pose_loss():
