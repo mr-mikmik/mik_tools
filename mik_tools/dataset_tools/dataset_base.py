@@ -170,7 +170,8 @@ class DatasetBase(Dataset, abc.ABC):
             os.makedirs(self.processed_data_path, exist_ok=True)
             # process the data and save it as .pt files
             self._process_hook()
-            for i in tqdm(range(self.__len__())):
+            pbar = tqdm(total=self.__len__(), desc='Processing data')
+            for i in pbar:
                 requires_processing_i = True
                 expected_sample_path_i = self._get_sample_path(i)
                 if self.contribute_mode and os.path.exists(expected_sample_path_i):
