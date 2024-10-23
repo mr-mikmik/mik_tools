@@ -281,7 +281,10 @@ def axis_angle_to_quat_array(axis_angle: np.ndarray) -> np.ndarray:
         quat (np.ndarray): of shape (..., 4)
     """
     angle = np.linalg.norm(axis_angle, axis=-1, keepdims=True) # (..., 1)
-    axis = axis_angle / angle
+    axis = axis_angle / angle # (..., 3)
+    # edit axis so where angle is zero, the axis is [1, 0, 0]
+    mask = angle < _EPS # (..., 1)
+    axis[mask[0]] = np.array([1.0, 0.0, 0.0], dtype=axis.dtype)
     quat = quaternion_about_axis_array(angle=angle[...,0], axis=axis)
     return quat
 
@@ -299,6 +302,9 @@ def axis_angle_to_quat_tensor(axis_angle: torch.Tensor) -> torch.Tensor:
     """
     angle = torch.linalg.norm(axis_angle, dim=-1) # (...,)
     axis = axis_angle / angle.unsqueeze(-1) # (..., 3)
+    # edit axis so where angle is zero, the axis is [1, 0, 0]
+    mask = angle < _EPS
+    axis[mask] = torch.tensor([1.0, 0.0, 0.0], dtype=axis.dtype, device=axis.device)
     quat = quaternion_about_axis_tensor(angle=angle, axis=axis)
     return quat
 
