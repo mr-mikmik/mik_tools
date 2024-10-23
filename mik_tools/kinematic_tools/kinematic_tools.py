@@ -70,8 +70,13 @@ def get_contact_jacobian(wf_X_cf):
 
     cf_X_wf = transform_matrix_inverse(wf_X_cf)
     cf_Ad_wf = get_adjoint_matrix(T=cf_X_wf)  # (6x6) matrix (..., 6, 6)
-    Jc = cf_Ad_wf.T[:, :3]  # (..., 6, 3)
-
+    if isinstance(cf_Ad_wf, np.ndarray):
+        # transpose the last two dimensions
+        Jc = np.swapaxes(cf_Ad_wf, -1, -2)[..., :, :3] # (..., 6, 3)
+    elif isinstance(cf_Ad_wf, torch.Tensor):
+        Jc = cf_Ad_wf.permute(-1, -2)[..., :, :3] # (..., 6, 3)
+    else:
+        raise ValueError('cf_Ad_wf must be a numpy array or a torch tensor.')
     # cf_X_wf = transform_matrix_inverse(wf_X_cf)
     # wf_Ad_tf = get_adjoint_matrix(T=cf_X_wf)  # (6x6) matrix (..., 6, 6)
     # Jc = wf_Ad_tf.T[:, :3]  # (..., 6, 3)

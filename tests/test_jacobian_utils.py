@@ -17,7 +17,6 @@ def compute_jacobian_and_contact_wrench(w_X_cf, fc, w_X_of=None, visualize=False
     Jc = get_contact_jacobian(wf_X_cf=wf_X_cf)
     contact_wrench_wf = Jc @ fc
 
-
     # visualize
     if visualize:
         print("contact_wrench_wf: ", contact_wrench_wf)
