@@ -2,7 +2,7 @@ import numpy as np
 import vedo
 
 from mik_tools import tr, matrix_to_pose, pose_to_matrix, transform_matrix_inverse, eye_pose, transform_points_3d, transform_vectors_3d
-
+from mik_tools.aux.package_utils import get_mesh_path
 
 def get_default_viz(viz=None):
     if viz is None:
@@ -68,5 +68,53 @@ def draw_points(points, color='r', viz=None):
     viz = get_default_viz(viz)
     points_geom = vedo.Points(points, c=color)
     viz += points_geom
+    return viz
+
+
+def draw_force(force_w, point=None, viz=None, color='r'):
+    viz = get_default_viz(viz)
+    if point is None:
+        point = np.zeros(3)
+    force = force_w[:3]
+    viz += [vedo.Arrow(start_pt=point, end_pt=point+force, c=color)]
+    return viz
+
+
+def draw_torque(torque_w, point=None, viz=None, color='r'):
+    viz = get_default_viz(viz)
+    if point is None:
+        point = np.zeros(3)
+    torque = torque_w[:3]
+    torque_norm = np.linalg.norm(torque)
+    if torque_norm < 1e-6:
+        return viz
+    torque_unit_w = torque / torque_norm
+    torque_mesh_axis = np.array([1., 0., 0.])
+    # get the rotation axis and angle to align the torque with the x axis
+    norm_axis = np.cross(torque_mesh_axis, torque_unit_w)
+    axis_dot = np.dot(torque_mesh_axis, torque_unit_w)
+    angle = np.arccos(axis_dot)
+    if 1-np.abs(axis_dot) < 1e-6:
+        if angle >= 0:
+            rot_axis = np.array([0., 0., 1.])
+            angle = 0.
+        else:
+            rot_axis = np.array([0., 0., 1.])
+            angle = np.array([np.pi])
+    else:
+        rot_axis = norm_axis / np.linalg.norm(norm_axis)
+    # w_pose_of = eye_pose  # matrix_to_pose(torque_w) # TODO: Fix this
+    w_pose_of = np.concatenate([point, tr.quaternion_about_axis(angle, rot_axis)])
+    scale = 1.0 * torque_norm
+    mesh_path = get_mesh_path('torque_arrow')
+    viz = draw_mesh_from_path(mesh_path=mesh_path, w_pose_of=w_pose_of, color=color, scale=scale, viz=viz)
+    return viz
+
+
+def draw_wrench(wrench_w, point=None, viz=None):
+    force_w = wrench_w[:3]
+    torque_w = wrench_w[3:]
+    viz = draw_force(force_w, point=point, viz=viz, color='pink')
+    viz = draw_torque(torque_w, point=point, viz=viz, color='yellow')
     return viz
 
