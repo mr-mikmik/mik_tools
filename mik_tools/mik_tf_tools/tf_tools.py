@@ -7,6 +7,7 @@ from mik_tools.math_tools.quaternion_average import average_quaternions, weighte
 
 eye_pose = np.array([0., 0., 0., 0., 0., 0., 1.])
 
+
 def pose_to_matrix(pose):
     """
     Convert a pose in position and quaternion format to a 4x4 transformation matrix

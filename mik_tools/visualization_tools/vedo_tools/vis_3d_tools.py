@@ -4,6 +4,7 @@ import vedo
 from mik_tools import tr, matrix_to_pose, pose_to_matrix, transform_matrix_inverse, eye_pose, transform_points_3d, transform_vectors_3d
 from mik_tools.aux.package_utils import get_mesh_path
 
+
 def get_default_viz(viz=None):
     if viz is None:
         viz = vedo.Plotter()
