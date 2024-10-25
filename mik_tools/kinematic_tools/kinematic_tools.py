@@ -1,12 +1,14 @@
 import numpy as np
 import torch
+from typing import List, Tuple, Union
 
 from mik_tools import tr, pose_to_matrix, transform_matrix_inverse
 
 
-def skew_matrix(v):
+def vector_to_skew_matrix(v:Union[List, np.ndarray, torch.Tensor]) -> Union[np.ndarray, torch.Tensor]:
     """
-    Get the skew matrix of a vector.
+    Get the skew matrix of a vector. v = [v_x, v_y, v_z]
+    This skew symmetric matrix belongs to the so(3) group. (exp:so(3)->SO(3))
     :param v: R^3 vector. of shape (..., 3) as a list or numpy array or torch tensor
     :return: skew matrix of shape (..., 3, 3)
     """
@@ -22,7 +24,52 @@ def skew_matrix(v):
     return skew_matrix
 
 
-def get_adjoint_matrix(T=None, R=None, t=None):
+def skew_matrix_to_vector(skew_matrix:Union[np.ndarray, torch.Tensor]) -> Union[np.ndarray, torch.Tensor]:
+    """
+    Get the vector from a skew symmetric matrix.
+    :param skew_matrix: (..., 3, 3) skew symmetric matrix
+    :return: vector of shape (..., 3)
+    """
+    v1 = skew_matrix[..., 2, 1]
+    v2 = skew_matrix[..., 0, 2]
+    v3 = skew_matrix[..., 1, 0]
+    vs = [v1, v2, v3]
+    if isinstance(skew_matrix, np.ndarray):
+        v = np.stack(vs, axis=-1) # (..., 3)
+    elif isinstance(skew_matrix, torch.Tensor):
+        v = torch.stack(vs, dim=-1) # (..., 3)
+    else:
+        raise ValueError(f'skew_matrix must be a numpy array or a torch tensor. Got {type(skew_matrix)}')
+    return v
+
+
+def exponential_map(skew_matrix:Union[np.ndarray, torch.Tensor]) -> Union[np.ndarray, torch.Tensor]:
+    """
+    Get the exponential map of a matrix.
+    :param skew_matrix: (..., 3, 3) skew symmetric matrix in so(3)
+    :return: exponential map of shape (..., 3, 3) in SO(3)
+    The exponential map of a skew symmetric matrix X is defined as:
+    exp(X) = I + X + X^2/2! + X^3/3! + X^4/4! + ...
+    Using the Rodrigues formula, the exponential map of a skew symmetric matrix X is given by:
+    exp(X) = I + sin(theta)X + (1 - cos(theta))X^2
+    where theta = ||X|| is the angle of rotation
+    NOTE: The exponential map is used to convert a skew symmetric matrix to a rotation matrix. In other words:
+        exp: so(3) -> SO(3)  where  R = exp(X) where X is a skew symmetric matrix
+    """
+    if isinstance(skew_matrix, np.ndarray):
+        theta = np.linalg.norm(skew_matrix_to_vector(skew_matrix), axis=-1, keepdims=True)  # (..., 1)
+        skew_matrix_squared = np.einsum('...ij,...jk->...ik', skew_matrix, skew_matrix)  # (..., 3, 3)
+        exp_X = np.eye(3) + np.sin(theta) * skew_matrix + (1 - np.cos(theta)) * skew_matrix_squared # (..., 3, 3)
+    elif isinstance(skew_matrix, torch.Tensor):
+        theta = torch.norm(skew_matrix_to_vector(skew_matrix), dim=-1, keepdim=True) # (..., 1)
+        skew_matrix_squared = torch.einsum('...ij,...jk->...ik', skew_matrix, skew_matrix)  # (..., 3, 3)
+        exp_X = torch.eye(3, device=skew_matrix.device, dtype=skew_matrix.dtype) + torch.sin(theta) * skew_matrix + (1 - torch.cos(theta)) * skew_matrix_squared # (..., 3, 3)
+    else:
+        raise ValueError(f'skew_matrix must be a numpy array or a torch tensor. Got {type(skew_matrix)}')
+    return exp_X
+
+
+def get_adjoint_matrix(T=None, R=None, t=None) -> Union[np.ndarray, torch.Tensor]:
     """
     Get the adjoint matrix of a transformation matrix.
     :param T: Homogeneous transfomration matrix. (..., 4, 4) numpy array
@@ -48,7 +95,7 @@ def get_adjoint_matrix(T=None, R=None, t=None):
     return adjoint_matrix
 
 
-def get_contact_jacobian(wf_X_cf):
+def get_contact_jacobian(wf_X_cf:Union[np.ndarray, torch.Tensor]) -> Union[np.ndarray, torch.Tensor]:
     """
     Return the jacobian associated to the contact frame cf in the wrench frame wf
     :param wf_X_cf: (..., 4, 4) transformation from contact frame to wrench frame where the jacobian is computed
@@ -83,7 +130,7 @@ def get_contact_jacobian(wf_X_cf):
     return Jc
 
 
-def transform_twist(twist_f1, f2_X_f1):
+def transform_twist(twist_f1:Union[list, np.ndarray, torch.Tensor], f2_X_f1:Union[np.ndarray, torch.Tensor]) -> Union[np.ndarray, torch.Tensor]:
     """
     Transform a twist from frame f1 to frame f2.
     :param twist_f1: numpy or torch tensor of shape (..., 6) with the twist in the frame f1
@@ -110,7 +157,90 @@ def transform_twist(twist_f1, f2_X_f1):
     return twist_f2
 
 
-def transform_wrench(wrench_wf, wf_T_tf):
+def twist_to_twist_matrix(twist:Union[np.ndarray, torch.Tensor]) -> Union[np.ndarray, torch.Tensor]:
+    """
+    Convert a twist to a matrix.
+    :param twist: (..., 6) as [v_x, v_y, v_z, omega_x, omega_y, omega_z]
+    :return: twist_matrix: (..., 4, 4) as the twist matrix
+    twist_matrix is defined as:
+        [  0, -wz,  wy, vx]
+        [ wz,   0, -wx, vy]
+        [-wy,  wx,   0, vz]
+        [  0,   0,   0,  0]
+    """
+    if isinstance(twist, np.ndarray):
+        twist_matrix = np.zeros(twist.shape[:-1] + (4, 4))
+        twist_matrix[..., :3, :3] = vector_to_skew_matrix(twist[..., 3:])
+        twist_matrix[..., :3, 3] = twist[..., :3]
+    elif isinstance(twist, torch.Tensor):
+        twist_matrix = torch.zeros(twist.shape[:-1] + (4, 4), dtype=twist.dtype, device=twist.device)
+        twist_matrix[..., :3, :3] = vector_to_skew_matrix(twist[..., 3:])
+        twist_matrix[..., :3, 3] = twist[..., :3]
+    else:
+        raise ValueError('twist must be a numpy array or a torch tensor.')
+    return twist_matrix
+
+
+def twist_matrix_to_twist(twist_matrix:Union[np.ndarray, torch.Tensor]) -> Union[np.ndarray, torch.Tensor]:
+    """
+    Convert a twist matrix to a twist.
+    :param twist_matrix: (..., 4, 4) as the twist matrix
+    :return: twist: (..., 6) as [v_x, v_y, v_z, omega_x, omega_y, omega_z]
+    """
+    v = twist_matrix[..., :3, 3] # (..., 3)
+    omega = skew_matrix_to_vector(twist_matrix[..., :3, :3]) # (..., 3)
+    if isinstance(twist_matrix, np.ndarray):
+        twist = np.concatenate([v, omega], axis=-1) # (..., 6)
+    elif isinstance(twist_matrix, torch.Tensor):
+        twist = torch.cat([v, omega], dim=-1) # (..., 6)
+    else:
+        raise ValueError('twist_matrix must be a numpy array or a torch tensor.')
+    return twist
+
+
+def twist_to_transform(twist:np.ndarray, dt:float=1.0) -> np.ndarray:
+    """
+    Apply the exponential map to a twist to get a transformation matrix.
+    :param twist: (..., 6) as [v_x, v_y, v_z, omega_x, omega_y, omega_z]
+    :param dt: (float) time step
+    :return: exp_twist: (..., 4, 4) as the transformation matrix SE(3)
+    NOTE: The exponential map of a twist is given by:
+        exp: se(3) -> SE(3)  where  T = exp(twist_matrix*dt) where twist_matrix is the matrix of the twist
+    """
+    v = twist[..., :3] # (..., 3)
+    omega = twist[..., 3:] # (..., 3)
+    skew_matrix = vector_to_skew_matrix(omega) # (..., 3, 3)
+    exp_skew_matrix = exponential_map(skew_matrix*dt) # (..., 3, 3)
+    if isinstance(twist, np.ndarray):
+        # compute the linear term
+        omega_cross_v = np.einsum('...ij,...j->...i', skew_matrix, v) # (..., 3)
+        omega_dot_v = np.einsum('...i,...i->...', omega, v) # (...,)
+        l1 = np.einsum('...ij,...j->...i', np.eye(3) + exp_skew_matrix, omega_cross_v) # (..., 3)
+        l2 = omega_dot_v * dt * omega # (..., 3)
+        l = l1 + l2 # (..., 3)
+        # form the matrix
+        exp_twist = np.zeros(twist.shape[:-1] + (4, 4))
+        exp_twist[..., :3, :3] = exp_skew_matrix
+        exp_twist[..., :3, 3] = l
+        exp_twist[..., 3, 3] = 1.0
+    elif isinstance(twist, torch.Tensor):
+        # compute the linear term
+        omega_cross_v = torch.einsum('...ij,...j->...i', skew_matrix, v) # (..., 3)
+        omega_dot_v = torch.einsum('...i,...i->...', omega, v) # (...,)
+        l1 = torch.einsum('...ij,...j->...i', torch.eye(3, device=twist.device, dtype=twist.dtype) + exp_skew_matrix, omega_cross_v) # (..., 3)
+        l2 = omega_dot_v * dt * omega # (..., 3)
+        l = l1 + l2
+        # form the matrix
+        exp_twist = torch.zeros(twist.shape[:-1] + (4, 4), dtype=twist.dtype, device=twist.device)
+        exp_twist[..., :3, :3] = exp_skew_matrix
+        exp_twist[..., :3, 3] = l
+        exp_twist[..., 3, 3] = 1.0
+    else:
+        raise ValueError('twist must be a numpy array or a torch tensor.')
+    return exp_twist
+
+
+def transform_wrench(wrench_wf:Union[list, np.ndarray, torch.Tensor], wf_T_tf:Union[np.ndarray, torch.Tensor]) -> Union[np.ndarray, torch.Tensor]:
     """
     Transform a wrench from the wrench frame to a target frame.
     :param wrench_wf: numpy or torch tensor of shape (..., 6) with the wrench in the wrench frame
@@ -141,7 +271,7 @@ def transform_wrench(wrench_wf, wf_T_tf):
 # AUXILIARY FUNCTIONS
 # ==================================================================================================
 
-def skew_matrix_array(v):
+def skew_matrix_array(v:np.ndarray) -> np.ndarray:
     """
     Get the skew matrix of a vector.
     :param v: R^3 vector. as numpy array of shape (..., 3)
@@ -157,7 +287,7 @@ def skew_matrix_array(v):
     return skew_matrix
 
 
-def skew_matrix_tensor(v):
+def skew_matrix_tensor(v:torch.Tensor) -> torch.Tensor:
     """
     Get the skew matrix of a vector.
     :param v: R^3 vector. as a torch tensor of shape (..., 3)
@@ -173,7 +303,7 @@ def skew_matrix_tensor(v):
     return skew_matrix
 
 
-def get_adjoint_matrix_numpy(R=None, t=None, T=None):
+def get_adjoint_matrix_numpy(R=None, t=None, T=None) -> np.ndarray:
     """
     Get the adjoint matrix of a transformation matrix.
 
@@ -205,11 +335,11 @@ def get_adjoint_matrix_numpy(R=None, t=None, T=None):
     adjoint_matrix = np.zeros(batch_size + (6, 6))
     adjoint_matrix[..., :3, :3] = R
     adjoint_matrix[..., 3:, 3:] = R
-    adjoint_matrix[..., :3, 3:] = np.einsum('...ij,...jk->...ik', skew_matrix(t), R)
+    adjoint_matrix[..., :3, 3:] = np.einsum('...ij,...jk->...ik', vector_to_skew_matrix(t), R)
     return adjoint_matrix
 
 
-def get_adjoint_matrix_torch(R=None, t=None, T=None):
+def get_adjoint_matrix_torch(R=None, t=None, T=None) -> torch.Tensor:
     """
     Get the adjoint matrix of a transformation matrix.
 
@@ -235,7 +365,7 @@ def get_adjoint_matrix_torch(R=None, t=None, T=None):
     adjoint_matrix = torch.zeros(batch_size + (6, 6), dtype=R.dtype, device=R.device)
     adjoint_matrix[..., :3, :3] = R
     adjoint_matrix[..., 3:, 3:] = R
-    adjoint_matrix[..., :3, 3:] = torch.einsum('...ij,...jk->...ik', skew_matrix(t), R)
+    adjoint_matrix[..., :3, 3:] = torch.einsum('...ij,...jk->...ik', vector_to_skew_matrix(t), R)
     return adjoint_matrix
 
 # ==================================================================================================
