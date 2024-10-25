@@ -266,6 +266,46 @@ def transform_wrench(wrench_wf:Union[list, np.ndarray, torch.Tensor], wf_T_tf:Un
     return wrench_tf
 
 
+def get_point_velocity_from_twist(twist_f1:Union[np.ndarray, torch.Tensor], points_f1:Union[np.ndarray, torch.Tensor], points_have_point_dimension:bool=True, only_points_are_batched:bool=False, only_twists_are_batched:bool=False) -> Union[np.ndarray, torch.Tensor]:
+    """
+    Get the velocity of a point given a twist.
+    :param twist_f1: twist in frame 1 of shape (..., 6) or (..., K, 6) if only_twists_are_batched=True
+    :param point_f1: point in frame 1 of shape (..., 3) or (..., K, 3) if points_have_point_dimension=True
+    :return: vel_f1: velocity of the point in frame 1 (..., 3) or (..., K, 3) if points_have_point_dimension=True
+    """
+    twist_matrices_f1 = twist_to_twist_matrix(twist_f1) # (..., 4, 4)
+    # NOTE: the point-matrix multiplication is the same as the one used in transform_points_3d.
+    # therefore, we can use the same function to get the point velocity
+    if points_have_point_dimension:
+        if only_points_are_batched:
+            einusm_key = 'ij,...kj->...ki'
+        elif only_twists_are_batched:
+            einusm_key = '...ij,kj->...ki'
+        else:
+            # both are batched
+            einusm_key = '...ij,...kj->...ki'
+    else:
+        if only_points_are_batched:
+            einusm_key = 'ij,...j->...i'
+        elif only_twists_are_batched:
+            einusm_key = '...ij,j->...i'
+        else:
+            # both are batched
+            einusm_key = '...ij,...j->...i'
+    if isinstance(points_f1, torch.Tensor):
+        points_f1_hom = torch.cat(
+            [points_f1, torch.ones_like(points_f1[..., :1], dtype=points_f1.dtype, device=points_f1.device)], dim=-1)
+        point_velocity_f1_hom = torch.einsum(einusm_key, twist_matrices_f1, points_f1_hom)  # (..., K, 4)
+    elif isinstance(points_f1, np.ndarray):
+        points_f1_hom = np.concatenate([points_f1, np.ones_like(points_f1[..., :1])], axis=-1)
+        point_velocity_f1_hom = np.einsum(einusm_key, twist_matrices_f1, points_f1_hom)  # (..., K, 4)
+    else:
+        raise ValueError('Unsupported type')
+    point_velocity_f1 = point_velocity_f1_hom[..., :3]
+    return point_velocity_f1
+
+
+
 # ==================================================================================================
 # ==================================================================================================
 # AUXILIARY FUNCTIONS
