@@ -11,7 +11,7 @@ def get_default_viz(viz=None):
     return viz
 
 
-def get_object_mesh(mesh_path, scale=1.0):
+def get_object_mesh(mesh_path:str, scale=1.0):
     obj_mesh = vedo.Mesh(mesh_path)
     obj_mesh = obj_mesh.scale(s=scale)
     return obj_mesh
@@ -68,7 +68,22 @@ def draw_points(points, color='r', viz=None):
     # points: (N, 3) numpy array
     viz = get_default_viz(viz)
     points_geom = vedo.Points(points, c=color)
-    viz += points_geom
+    viz += [points_geom]
+    return viz
+
+
+def draw_vectors(points, vectors, color='yellow', viz=None):
+    """
+    Draw vectors originating from points
+    :param points:
+    :param vectors:
+    :param color:
+    :param viz:
+    :return:
+    """
+    viz = get_default_viz(viz)
+    arrows_w = vedo.Arrows(points, points+vectors, c='yellow', thickness=5)
+    viz += [arrows_w]
     return viz
 
 
