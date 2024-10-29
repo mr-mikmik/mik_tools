@@ -64,15 +64,15 @@ def draw_frame(pose, scale=1.0, viz=None):
     return viz
 
 
-def draw_points(points, color='r', viz=None):
+def draw_points(points, color='r', size=4, viz=None):
     # points: (N, 3) numpy array
     viz = get_default_viz(viz)
-    points_geom = vedo.Points(points, c=color)
+    points_geom = vedo.Points(points, c=color,r=size)
     viz += [points_geom]
     return viz
 
 
-def draw_vectors(points, vectors, color='yellow', viz=None):
+def draw_vectors(points, vectors, color='yellow', thickness=5, viz=None):
     """
     Draw vectors originating from points
     :param points:
@@ -82,7 +82,7 @@ def draw_vectors(points, vectors, color='yellow', viz=None):
     :return:
     """
     viz = get_default_viz(viz)
-    arrows_w = vedo.Arrows(points, points+vectors, c='yellow', thickness=5)
+    arrows_w = vedo.Arrows(points, points+vectors, c=color, thickness=thickness)
     viz += [arrows_w]
     return viz
 
