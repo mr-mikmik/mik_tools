@@ -137,3 +137,39 @@ def rotation_along_point_angle_2d(pose_init, angle, point=None, max_angle_step=N
     angles = np.sign(angle)*np.linspace(np.abs(angle_step), np.abs(angle), num_steps)
     poses = [rotate_planar_pose(pose_init, angle, point) for angle in angles] # 2d poses
     return poses
+
+
+def pose_matrix_trajectory_interpolation(w_X_init:np.ndarray, w_X_final:np.ndarray, num_steps:int) -> np.ndarray:
+    """
+    Interpolates between two SE(3) poses.
+    :param w_X_init: (4, 4) as the initial pose matrix
+    :param w_X_final: (4, 4) as the final pose matrix
+    :param num_steps: (int) as the number of steps to interpolate
+    :return: w_X_interpolated: (num_steps+1, 4, 4) as the interpolated poses
+    """
+    w_X_interpolated = []
+    for i in range(num_steps):
+        alpha = i / num_steps
+        w_X_i = pose_matrix_interpolation(w_X_init, w_X_final, alpha)
+        w_X_interpolated.append(w_X_i)
+    w_X_interpolated.append(pose_matrix_interpolation(w_X_init, w_X_final, 1.)) # Add the last pose
+    w_X_interpolated = np.stack(w_X_interpolated, axis=0) # (num_steps+1, 4, 4)
+    return w_X_interpolated
+
+
+def pose_matrix_interpolation(w_X_init, w_X_final, alpha):
+    """
+    Interpolates between two SE(3) poses.
+    :param w_X_init: (4, 4) as the initial pose matrix
+    :param w_X_final: (4, 4) as the final pose matrix
+    :param alpha: (float) as the interpolation factor (between 0 and 1)
+    :return: w_X_interpolated: (num_steps, 4, 4) as the interpolated poses
+    """
+    w_pose_init = matrix_to_pose(w_X_init)
+    w_pose_final = matrix_to_pose(w_X_final)
+    quat_init = w_pose_init[3:]
+    quat_final = w_pose_final[3:]
+    quat_i = tr.quaternion_slerp(quat_init, quat_final, alpha)
+    pos_i = w_pose_init[:3] + alpha * (w_pose_final[:3] - w_pose_init[:3])
+    w_X_i = pose_to_matrix(np.concatenate([pos_i, quat_i]))
+    return w_X_i
