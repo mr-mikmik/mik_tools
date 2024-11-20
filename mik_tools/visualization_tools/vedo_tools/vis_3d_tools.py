@@ -67,7 +67,7 @@ def draw_frame(pose, scale=1.0, viz=None):
 def draw_points(points, color='r', size=4, viz=None):
     # points: (N, 3) numpy array
     viz = get_default_viz(viz)
-    points_geom = vedo.Points(points, c=color,r=size)
+    points_geom = vedo.Points(points, c=color, r=size)
     viz += [points_geom]
     return viz
 
@@ -84,6 +84,24 @@ def draw_vectors(points, vectors, color='yellow', thickness=5, viz=None):
     viz = get_default_viz(viz)
     arrows_w = vedo.Arrows(points, points+vectors, c=color, thickness=thickness)
     viz += [arrows_w]
+    return viz
+
+
+def draw_lines(star_points, end_points, color='black', thickness=5, viz=None):
+    """
+    Draw lines connecting star_points to end_points
+    :param star_points:
+    :param end_points:
+    :param color:
+    :param viz:
+    :return:
+    """
+    viz = get_default_viz(viz)
+    lines_w = vedo.Lines(star_points, end_points, c=color, lw=thickness)
+    # pts1 = vedo.Points(star_points).legend("Set 1")
+    # pts2 = vedo.Points(end_points).legend("Set 2")
+    # lines_w = vedo.Lines(pts1, pts2, c=color, lw=thickness)
+    viz += [lines_w]
     return viz
 
 
