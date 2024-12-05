@@ -3,6 +3,31 @@ import torch
 from typing import Union
 
 
+def soft_maximum_log_barrier(x:torch.Tensor, z:torch.Tensor, alpha:float=1.0) -> torch.Tensor:
+    """
+    Compute the log barrier function
+    Args:
+        x (torch.Tensor): of shape (..., )
+        alpha (float): parameter of the log barrier [0, inf] - the larger, the closer it is to the minimum. About 3.0 is a good value.
+    Returns:
+        out (torch.Tensor): of shape (..., )
+    """
+    out = z + 1/alpha * torch.log(1 + torch.exp(alpha * (x - z)))
+    return out
+
+
+def soft_minimum_log_barrier(x:torch.Tensor, z:torch.Tensor, alpha:float=1.0) -> torch.Tensor:
+    """
+    Softened minimum function using log-barriers
+    :param x: (...,) tensor
+    :param z: (...,) tensor
+    :param alpha: float [0, inf] - the larger, the closer it is to the minimum. About 3.0 is a good value.
+    :return: (...,) tensor
+    """
+    y_min_log_barrier = z - 1 / alpha * torch.log(1 + torch.exp(-alpha * (x - z)))
+    return y_min_log_barrier
+
+
 def batched_index_select(X:Union[np.ndarray, torch.Tensor], indxs:Union[np.ndarray, torch.Tensor]) -> Union[np.ndarray, torch.Tensor]:
     """
     Batch select an array or tensor based on a batched set of indxs
