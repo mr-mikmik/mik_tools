@@ -354,11 +354,11 @@ def quaternion_from_matrix(matrix):
     return q
 
 
-def quaternion_matrix_batched_array(quaternion):
+def quaternion_matrix_batched_array(quaternion:np.ndarray) -> np.ndarray:
     """
-
+    Convert rotations given as quaternions to rotation matrices.
     :param quaternion: np array of shape (..., 4)
-    :return: (..., 4, 4)
+    :return: matrix_out (..., 4, 4) as the rotation matrices
     """
     nq = np.einsum('...i,...i->...', quaternion, quaternion) # (...)
     quaternion = quaternion * np.sqrt(2.0 / nq[..., np.newaxis]) # (..., 4) # normalized quat
@@ -380,11 +380,11 @@ def quaternion_matrix_batched_array(quaternion):
     return matrix_out
 
 
-def quaternion_matrix_batched_tensor(quaternion):
+def quaternion_matrix_batched_tensor(quaternion:torch.Tensor) -> torch.Tensor:
     """
-
+    Convert rotations given as quaternions to rotation matrices.
     :param quaternion: torch tensor of shape (..., 4)
-    :return: (..., 4, 4)
+    :return: matrix_out (..., 4, 4) as the rotation matrices
     """
     nq = torch.einsum('...i,...i->...', quaternion, quaternion)  # (...)
     quaternion = quaternion * torch.sqrt(2.0 / nq.unsqueeze(-1))  # (..., 4) # normalized quat
