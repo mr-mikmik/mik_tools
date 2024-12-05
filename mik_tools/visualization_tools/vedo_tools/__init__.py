@@ -1,1 +1,1 @@
-from .vis_3d_tools import get_default_viz, get_object_mesh, draw_mesh, draw_mesh_from_path, draw_box, draw_frame, draw_vectors, draw_points, draw_force, draw_torque, draw_wrench
+from .vis_3d_tools import get_default_viz, get_object_mesh, draw_mesh, draw_mesh_from_path, draw_box, draw_plane, draw_frame, draw_cone, draw_vectors, draw_points, draw_force, draw_torque, draw_wrench

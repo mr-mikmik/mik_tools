@@ -47,6 +47,30 @@ def draw_box(box_size, w_pose_of, color=None, alpha=1.0, viz=None):
     return viz
 
 
+def draw_plane(w_X_pf, color=None, size_x=1, size_y=1, viz=None, alpha=1.0):
+    # w_X_pf: (4, 4) as the pose of the plane frame w.r.t the world frame
+    viz = get_default_viz(viz)
+    obj = vedo.Plane(pos=w_X_pf[:3, 3], normal=w_X_pf[:3, 2], s=(size_x, size_y), alpha=alpha)
+    if color is not None:
+        obj.color(c=color)
+    viz += [obj]
+    return viz
+
+
+def draw_cone(w_X_cf, tan_half_angle, viz=None, color='g', alpha=1.0, scale=1.0):
+    # draw a cone with normal axis in the z direction
+    # half_angle: angle between the cone edge and the z axis
+    # for friction cones, half_angle = np.arctan(mu)
+    viz = get_default_viz(viz)
+    cone_h = scale
+    cone_r = scale*tan_half_angle
+    cone_axis = -w_X_cf[:3, 2]
+    cone_vertex = w_X_cf[:3, 3] - cone_h*0.5 * cone_axis# np.array([0, 0, cone_h*0.5])
+    cone = vedo.Cone(pos=cone_vertex, r=cone_r, height=cone_h, axis=cone_axis, c=color, alpha=alpha)
+    viz += [cone]
+    return viz
+
+
 def draw_frame(pose, scale=1.0, viz=None):
     viz = get_default_viz(viz)
     arrow_ends = scale*np.eye(3) # in frame reference
@@ -112,6 +136,9 @@ def draw_force(force_w, point=None, viz=None, color='r'):
     force = force_w[:3]
     viz += [vedo.Arrow(start_pt=point, end_pt=point+force, c=color)]
     return viz
+
+
+
 
 
 def draw_torque(torque_w, point=None, viz=None, color='r'):
