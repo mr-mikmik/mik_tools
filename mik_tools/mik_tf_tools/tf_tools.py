@@ -88,7 +88,7 @@ def transform_matrix_inverse(matrix):
     return matrix_inv
 
 
-def transform_points_3d(points_f1, f2_X_f1, points_have_point_dimension=True, only_points_are_batched=False, only_transform_are_batched=False):
+def transform_points_3d(points_f1, f2_X_f1, points_have_point_dimension=True, only_points_are_batched=False, only_transform_are_batched=False, einsum_key=None):
     """
     Transform a set of points in 2D from frame f1 to frame f2
     :param points_f1: tensor or array of shape (..., K, 3) if have_point_dimension is True, or (..., 3) if have_point_dimension is False
@@ -96,36 +96,37 @@ def transform_points_3d(points_f1, f2_X_f1, points_have_point_dimension=True, on
     :param points_have_point_dimension: bool indicating if points have an extra dimension for the points
     :return: points_f2 tensor or array of shape (..., K, 3) if have_point_dimension is True, or (..., 3) if have_point_dimension is False
     """
-    if points_have_point_dimension:
-        if only_points_are_batched:
-            einusm_key = 'ij,...kj->...ki'
-        elif only_transform_are_batched:
-            einusm_key = '...ij,kj->...ki'
+    if einsum_key is None:
+        if points_have_point_dimension:
+            if only_points_are_batched:
+                einsum_key = 'ij,...kj->...ki'
+            elif only_transform_are_batched:
+                einsum_key = '...ij,kj->...ki'
+            else:
+                # both are batched
+                einsum_key = '...ij,...kj->...ki'
         else:
-            # both are batched
-            einusm_key = '...ij,...kj->...ki'
-    else:
-        if only_points_are_batched:
-            einusm_key = 'ij,...j->...i'
-        elif only_transform_are_batched:
-            einusm_key = '...ij,j->...i'
-        else:
-            # both are batched
-            einusm_key = '...ij,...j->...i'
+            if only_points_are_batched:
+                einsum_key = 'ij,...j->...i'
+            elif only_transform_are_batched:
+                einsum_key = '...ij,j->...i'
+            else:
+                # both are batched
+                einsum_key = '...ij,...j->...i'
     if isinstance(points_f1, torch.Tensor):
         points_f1_hom = torch.cat(
             [points_f1, torch.ones_like(points_f1[..., :1], dtype=points_f1.dtype, device=points_f1.device)], dim=-1)
-        points_f2_hom = torch.einsum(einusm_key, f2_X_f1, points_f1_hom)  # (..., K, 4)
+        points_f2_hom = torch.einsum(einsum_key, f2_X_f1, points_f1_hom)  # (..., K, 4)
     elif isinstance(points_f1, np.ndarray):
         points_f1_hom = np.concatenate([points_f1, np.ones_like(points_f1[..., :1])], axis=-1)
-        points_f2_hom = np.einsum(einusm_key, f2_X_f1, points_f1_hom)  # (..., K, 4)
+        points_f2_hom = np.einsum(einsum_key, f2_X_f1, points_f1_hom)  # (..., K, 4)
     else:
         raise ValueError('Unsupported type')
     points_f2 = points_f2_hom[..., :3] / points_f2_hom[..., 3:]
     return points_f2
 
 
-def transform_vectors_3d(vectors_f1, f2_X_f1, vectors_have_point_dimension=False):
+def transform_vectors_3d(vectors_f1, f2_X_f1, vectors_have_point_dimension=False, einsum_key=None):
     """
     Transform a set of vectors in 2D from frame f1 to frame f2
     :param vectors_f1: tensor or array of shape (..., 3) if vectors_have_point_dimension is False, or (..., K, 3) if vectors_have_point_dimension is True
@@ -133,7 +134,9 @@ def transform_vectors_3d(vectors_f1, f2_X_f1, vectors_have_point_dimension=False
     :param vectors_have_point_dimension: bool indicating if vectors have an extra dimension for the points
     :return: vectors_f2 tensor or array of shape (..., 3) if vectors_have_point_dimension is False, or (...,K, 3) if vectors_have_point_dimension is True
     """
-    if vectors_have_point_dimension:
+    if einsum_key is not None:
+        pass
+    elif vectors_have_point_dimension:
         einsum_key = '...ij,...kj->...ki'
     else:
         einsum_key = '...ij,...j->...i'
