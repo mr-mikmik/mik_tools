@@ -1,6 +1,37 @@
 import numpy as np
 import torch
-from typing import Union
+from typing import Union, Tuple, List
+
+
+def batched_eye_tensor(n:int, batch_shape:Union[Tuple, List]=(), dtype=None, device=None) -> torch.Tensor:
+    """
+    Create a batched identity matrix
+    Args:
+        n (int): size of the square matrix
+        batch_shape (Tuple or List): batch shape
+    Returns:
+        eye (torch.Tensor): of shape (*batch_shape, n, n)
+    """
+    eye = torch.eye(n, dtype=dtype, device=device).repeat(*batch_shape, 1, 1) # (*batch_shape, n, n)
+    return eye
+
+
+def batched_eye_array(n:int, batch_shape:Union[Tuple, List]=()) -> np.ndarray:
+    """
+    Create a batched identity matrix
+    Args:
+        n (int): size of the square matrix
+        batch_shape (Tuple or List): batch shape
+    Returns:
+        eye (np.ndarray): of shape (*batch_shape, n, n)
+    """
+    B = np.prod(batch_shape)
+    eye = np.eye(n, dtype=np.float32) # (n, n)
+    # extend the batch dim
+    eye = np.expand_dims(eye, axis=0) # (1, n, n)
+    eye = np.repeat(eye, B, axis=0) # (B, n, n)
+    eye = eye.reshape(*batch_shape, n, n) # (*batch_shape, n, n)
+    return eye
 
 
 def soft_maximum_log_barrier(x:torch.Tensor, z:torch.Tensor, alpha:float=1.0) -> torch.Tensor:
