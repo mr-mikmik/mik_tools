@@ -3,9 +3,10 @@ import numpy as np
 import torch
 import warnings
 import math
-from typing import Union
+from typing import Union, List, Tuple
 
 import torch.nn.functional as F
+from mik_tools.tensor_utils import batched_eye_tensor, batched_eye_array
 from mik_tools.mik_tf_tools.transformations.tr_tools import _AXES2TUPLE, _EPS, _NEXT_AXIS, _TUPLE2AXES, vector_norm, unit_vector, _sqrt_positive_part
 
 
@@ -29,57 +30,25 @@ def rotation_to_transform(rotation_matrix: Union[torch.tensor, np.ndarray]) -> U
     return transform_matrix
 
 
-def euler_matrix(ai, aj, ak, axes='sxyz'):
+def euler_matrix(ai:Union[torch.Tensor, np.ndarray], aj:Union[torch.Tensor, np.ndarray], ak:Union[torch.Tensor, np.ndarray], axes='sxyz') -> [torch.Tensor, np.ndarray]:
     """
     Return homogeneous rotation matrix from Euler angles and axis sequence.
-    ai, aj, ak : Euler's roll, pitch and yaw angles
-    axes : One of 24 axis sequences as string or encoded tuple
+    :param ai: (torch.Tensor or np.ndarray) of shape (...,)
+    :param aj: (torch.Tensor or np.ndarray) of shape (...,)
+    :param ak: (torch.Tensor or np.ndarray) of shape (...,)
+    :param axes: str of axis sequence
+    :return: (torch.Tensor or np.ndarray) of shape (..., 4, 4)
     """
-    try:
-        firstaxis, parity, repetition, frame = _AXES2TUPLE[axes]
-    except (AttributeError, KeyError):
-        _ = _TUPLE2AXES[axes]
-        firstaxis, parity, repetition, frame = axes
-
-    i = firstaxis
-    j = _NEXT_AXIS[i+parity]
-    k = _NEXT_AXIS[i-parity+1]
-
-    if frame:
-        ai, ak = ak, ai
-    if parity:
-        ai, aj, ak = -ai, -aj, -ak
-
-    si, sj, sk = math.sin(ai), math.sin(aj), math.sin(ak)
-    ci, cj, ck = math.cos(ai), math.cos(aj), math.cos(ak)
-    cc, cs = ci*ck, ci*sk
-    sc, ss = si*ck, si*sk
-
-    M = np.identity(4)
-    if repetition:
-        M[i, i] = cj
-        M[i, j] = sj*si
-        M[i, k] = sj*ci
-        M[j, i] = sj*sk
-        M[j, j] = -cj*ss+cc
-        M[j, k] = -cj*cs-sc
-        M[k, i] = -sj*ck
-        M[k, j] = cj*sc+cs
-        M[k, k] = cj*cc-ss
+    if torch.is_tensor(ai) and torch.is_tensor(aj) and torch.is_tensor(ak):
+        M = euler_matrix_tensor(ai=ai, aj=aj, ak=ak, axes=axes)
+    elif type(ai) is np.ndarray and type(aj) is np.ndarray and type(ak) is np.ndarray:
+        M = euler_matrix_array(ai=ai, aj=aj, ak=ak, axes=axes)
     else:
-        M[i, i] = cj*ck
-        M[i, j] = sj*sc-cs
-        M[i, k] = sj*cc+ss
-        M[j, i] = cj*sk
-        M[j, j] = sj*ss+cc
-        M[j, k] = sj*cs-sc
-        M[k, i] = -sj
-        M[k, j] = cj*si
-        M[k, k] = cj*ci
+        raise NotImplementedError(f'Input types not tensor or array (types: ai {type(ai)} aj {type(aj)} ak {type(ak)}')
     return M
 
 
-def euler_from_matrix(matrix, axes='sxyz'):
+def euler_from_matrix(matrix:Union[torch.Tensor, np.ndarray], axes='sxyz') -> Union[Tuple[torch.Tensor,torch.Tensor,torch.Tensor], Tuple[np.ndarray,np.ndarray,np.ndarray]]:
     """
     Return Euler angles from rotation matrix for specified axis sequence.
 
@@ -88,42 +57,12 @@ def euler_from_matrix(matrix, axes='sxyz'):
     Note that many Euler angle triplets can describe one matrix.
 
     """
-    try:
-        firstaxis, parity, repetition, frame = _AXES2TUPLE[axes.lower()]
-    except (AttributeError, KeyError):
-        _ = _TUPLE2AXES[axes]
-        firstaxis, parity, repetition, frame = axes
-
-    i = firstaxis
-    j = _NEXT_AXIS[i+parity]
-    k = _NEXT_AXIS[i-parity+1]
-
-    M = np.array(matrix, dtype=np.float64, copy=False)[:3, :3]
-    if repetition:
-        sy = math.sqrt(M[i, j]*M[i, j] + M[i, k]*M[i, k])
-        if sy > _EPS:
-            ax = math.atan2( M[i, j],  M[i, k])
-            ay = math.atan2( sy,       M[i, i])
-            az = math.atan2( M[j, i], -M[k, i])
-        else:
-            ax = math.atan2(-M[j, k],  M[j, j])
-            ay = math.atan2( sy,       M[i, i])
-            az = 0.0
+    if torch.is_tensor(matrix):
+        ax, ay, az = euler_from_matrix_tensor(matrix=matrix, axes=axes)
+    elif type(matrix) is np.ndarray:
+        ax, ay, az = euler_from_matrix_array(matrix=matrix, axes=axes)
     else:
-        cy = math.sqrt(M[i, i]*M[i, i] + M[j, i]*M[j, i])
-        if cy > _EPS:
-            ax = math.atan2( M[k, j],  M[k, k])
-            ay = math.atan2(-M[k, i],  cy)
-            az = math.atan2( M[j, i],  M[i, i])
-        else:
-            ax = math.atan2(-M[j, k],  M[j, j])
-            ay = math.atan2(-M[k, i],  cy)
-            az = 0.0
-
-    if parity:
-        ax, ay, az = -ax, -ay, -az
-    if frame:
-        ax, az = az, ax
+        raise NotImplementedError(f'Input types not tensor or array (types: matrix {type(matrix)}')
     return ax, ay, az
 
 
@@ -575,5 +514,315 @@ def quaternion_slerp(quat0, quat1, fraction, spin=0, shortestpath=True):
     q1 *= math.sin(fraction * angle) * isin
     q0 += q1
     return q0
+
+
+
+
+def euler_matrix_raw(ai, aj, ak, axes='sxyz'):
+    """
+    Return homogeneous rotation matrix from Euler angles and axis sequence.
+    ai, aj, ak : Euler's roll, pitch and yaw angles
+    axes : One of 24 axis sequences as string or encoded tuple
+    """
+    try:
+        firstaxis, parity, repetition, frame = _AXES2TUPLE[axes]
+    except (AttributeError, KeyError):
+        _ = _TUPLE2AXES[axes]
+        firstaxis, parity, repetition, frame = axes
+
+    i = firstaxis
+    j = _NEXT_AXIS[i+parity]
+    k = _NEXT_AXIS[i-parity+1]
+
+    if frame:
+        ai, ak = ak, ai
+    if parity:
+        ai, aj, ak = -ai, -aj, -ak
+
+    si, sj, sk = math.sin(ai), math.sin(aj), math.sin(ak)
+    ci, cj, ck = math.cos(ai), math.cos(aj), math.cos(ak)
+    cc, cs = ci*ck, ci*sk
+    sc, ss = si*ck, si*sk
+
+    M = np.identity(4)
+    if repetition:
+        M[i, i] = cj
+        M[i, j] = sj*si
+        M[i, k] = sj*ci
+        M[j, i] = sj*sk
+        M[j, j] = -cj*ss+cc
+        M[j, k] = -cj*cs-sc
+        M[k, i] = -sj*ck
+        M[k, j] = cj*sc+cs
+        M[k, k] = cj*cc-ss
+    else:
+        M[i, i] = cj*ck
+        M[i, j] = sj*sc-cs
+        M[i, k] = sj*cc+ss
+        M[j, i] = cj*sk
+        M[j, j] = sj*ss+cc
+        M[j, k] = sj*cs-sc
+        M[k, i] = -sj
+        M[k, j] = cj*si
+        M[k, k] = cj*ci
+    return M
+
+
+
+def euler_matrix_array(ai:np.ndarray, aj:np.ndarray, ak:np.ndarray, axes='sxyz') -> np.ndarray:
+    """
+    Return homogeneous rotation matrix from Euler angles and axis sequence.
+    :param ai: (...,) np array of roll angles
+    :param aj: (...,) np array of pitch angles
+    :param ak: (...,) np array of yaw angles
+    :param axes: code for axis sequence as string or encoded tuple (default 'sxyz')
+    :return matrix: (..., 4, 4) np array of rotation matrices
+    """
+    try:
+        firstaxis, parity, repetition, frame = _AXES2TUPLE[axes]
+    except (AttributeError, KeyError):
+        _ = _TUPLE2AXES[axes]
+        firstaxis, parity, repetition, frame = axes
+
+    i = firstaxis
+    j = _NEXT_AXIS[i+parity]
+    k = _NEXT_AXIS[i-parity+1]
+
+    if frame:
+        ai, ak = ak, ai
+    if parity:
+        ai, aj, ak = -ai, -aj, -ak
+
+    si, sj, sk = np.sin(ai), np.sin(aj), np.sin(ak) # (...,), (...,), (...,)
+    ci, cj, ck = np.cos(ai), np.cos(aj), np.cos(ak) # (...,), (...,), (...,)
+    cc, cs = ci*ck, ci*sk # (...,), (...,)
+    sc, ss = si*ck, si*sk # (...,), (...,)
+
+    M = batched_eye_array(4, batch_shape=ai.shape[:-1]) # (..., 4, 4)
+    if repetition:
+        M[..., i, i] = cj
+        M[..., i, j] = sj*si
+        M[..., i, k] = sj*ci
+        M[..., j, i] = sj*sk
+        M[..., j, j] = -cj*ss+cc
+        M[..., j, k] = -cj*cs-sc
+        M[..., k, i] = -sj*ck
+        M[..., k, j] = cj*sc+cs
+        M[..., k, k] = cj*cc-ss
+    else:
+        M[..., i, i] = cj*ck
+        M[..., i, j] = sj*sc-cs
+        M[..., i, k] = sj*cc+ss
+        M[..., j, i] = cj*sk
+        M[..., j, j] = sj*ss+cc
+        M[..., j, k] = sj*cs-sc
+        M[..., k, i] = -sj
+        M[..., k, j] = cj*si
+        M[..., k, k] = cj*ci
+    return M
+
+
+def euler_matrix_tensor(ai:torch.Tensor, aj:torch.Tensor, ak:torch.Tensor, axes='sxyz') -> torch.Tensor:
+    """
+    Return homogeneous rotation matrix from Euler angles and axis sequence.
+    :param ai: (...,) torch tensor of roll angles
+    :param aj: (...,) torch tensor of pitch angles
+    :param ak: (...,) torch tensor of yaw angles
+    :param axes: code for axis sequence as string or encoded tuple (default 'sxyz')
+    :return matrix: (..., 4, 4) torch tensor of rotation matrices
+    """
+    try:
+        firstaxis, parity, repetition, frame = _AXES2TUPLE[axes] # (int, int, int, int)
+    except (AttributeError, KeyError):
+        _ = _TUPLE2AXES[axes]
+        firstaxis, parity, repetition, frame = axes # (int, int, int, int)
+
+    i = firstaxis # (int)
+    j = _NEXT_AXIS[i+parity] # (int)
+    k = _NEXT_AXIS[i-parity+1] # (int)
+
+    if frame:
+        ai, ak = ak, ai
+    if parity:
+        ai, aj, ak = -ai, -aj, -ak
+
+    si, sj, sk = torch.sin(ai), torch.sin(aj), torch.sin(ak) # (...,), (...,), (...,)
+    ci, cj, ck = torch.cos(ai), torch.cos(aj), torch.cos(ak) # (...,), (...,), (...,)
+    cc, cs = ci*ck, ci*sk # (...,), (...,)
+    sc, ss = si*ck, si*sk # (...,), (...,)
+
+    M = batched_eye_tensor(4, batch_shape=ai.shape, device=ai.device, dtype=ai.dtype) # (..., 4, 4)
+    if repetition:
+        M[..., i, i] = cj
+        M[..., i, j] = sj*si
+        M[..., i, k] = sj*ci
+        M[..., j, i] = sj*sk
+        M[..., j, j] = -cj*ss+cc
+        M[..., j, k] = -cj*cs-sc
+        M[..., k, i] = -sj*ck
+        M[..., k, j] = cj*sc+cs
+        M[..., k, k] = cj*cc-ss
+    else:
+        M[..., i, i] = cj*ck
+        M[..., i, j] = sj*sc-cs
+        M[..., i, k] = sj*cc+ss
+        M[..., j, i] = cj*sk
+        M[..., j, j] = sj*ss+cc
+        M[..., j, k] = sj*cs-sc
+        M[..., k, i] = -sj
+        M[..., k, j] = cj*si
+        M[..., k, k] = cj*ci
+    return M
+
+
+def euler_from_matrix_raw(matrix, axes='sxyz'):
+    """
+    Return Euler angles from rotation matrix for specified axis sequence.
+
+    axes : One of 24 axis sequences as string or encoded tuple
+
+    Note that many Euler angle triplets can describe one matrix.
+
+    """
+    try:
+        firstaxis, parity, repetition, frame = _AXES2TUPLE[axes.lower()]
+    except (AttributeError, KeyError):
+        _ = _TUPLE2AXES[axes]
+        firstaxis, parity, repetition, frame = axes
+
+    i = firstaxis
+    j = _NEXT_AXIS[i+parity]
+    k = _NEXT_AXIS[i-parity+1]
+
+    M = np.array(matrix, dtype=np.float64, copy=False)[:3, :3]
+    if repetition:
+        sy = math.sqrt(M[i, j]*M[i, j] + M[i, k]*M[i, k])
+        if sy > _EPS:
+            ax = math.atan2( M[i, j],  M[i, k])
+            ay = math.atan2( sy,       M[i, i])
+            az = math.atan2( M[j, i], -M[k, i])
+        else:
+            ax = math.atan2(-M[j, k],  M[j, j])
+            ay = math.atan2( sy,       M[i, i])
+            az = 0.0
+    else:
+        cy = math.sqrt(M[i, i]*M[i, i] + M[j, i]*M[j, i])
+        if cy > _EPS:
+            ax = math.atan2( M[k, j],  M[k, k])
+            ay = math.atan2(-M[k, i],  cy)
+            az = math.atan2( M[j, i],  M[i, i])
+        else:
+            ax = math.atan2(-M[j, k],  M[j, j])
+            ay = math.atan2(-M[k, i],  cy)
+            az = 0.0
+
+    if parity:
+        ax, ay, az = -ax, -ay, -az
+    if frame:
+        ax, az = az, ax
+    return ax, ay, az
+
+
+def euler_from_matrix_array(matrix:np.ndarray, axes='sxyz') -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+     Return Euler angles from rotation matrix for specified axis sequence.
+
+    axes :
+    Note that many Euler angle triplets can describe one matrix.
+    :param matrix (np.ndarray): of shape (..., 4, 4)
+    :param axes (str): One of 24 axis sequences as string or encoded tuple
+    :return ax (np.ndarray): of shape (...,)
+    :return ay (np.ndarray): of shape (...,)
+    :return az (np.ndarray): of shape (...,)
+    """
+    try:
+        firstaxis, parity, repetition, frame = _AXES2TUPLE[axes.lower()]
+    except (AttributeError, KeyError):
+        _ = _TUPLE2AXES[axes]
+        firstaxis, parity, repetition, frame = axes
+
+    i = firstaxis
+    j = _NEXT_AXIS[i+parity]
+    k = _NEXT_AXIS[i-parity+1]
+
+    M = np.array(matrix, dtype=np.float64, copy=False)[..., :3, :3] # (..., 3, 3)
+    if repetition:
+        sy = np.sqrt(M[..., i, j]*M[..., i, j] + M[..., i, k]*M[..., i, k])
+        if sy > _EPS:
+            ax = np.arctan2( M[..., i, j],  M[..., i, k])
+            ay = np.arctan2( sy,       M[..., i, i])
+            az = np.arctan2( M[..., j, i], -M[..., k, i])
+        else:
+            ax = np.arctan2(-M[..., j, k],  M[..., j, j])
+            ay = np.arctan2( sy,       M[..., i, i])
+            az = 0.0 * sy
+    else:
+        cy = np.sqrt(M[..., i, i]*M[..., i, i] + M[..., j, i]*M[..., j, i])
+        if cy > _EPS:
+            ax = np.arctan2( M[..., k, j],  M[..., k, k])
+            ay = np.arctan2(-M[..., k, i],  cy)
+            az = np.arctan2( M[..., j, i],  M[..., i, i])
+        else:
+            ax = np.arctan2(-M[..., j, k],  M[..., j, j])
+            ay = np.arctan2(-M[..., k, i],  cy)
+            az = 0.0 * cy
+
+    if parity:
+        ax, ay, az = -ax, -ay, -az
+    if frame:
+        ax, az = az, ax
+    return ax, ay, az
+
+
+def euler_from_matrix_tensor(matrix:torch.Tensor, axes='sxyz') -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """
+     Return Euler angles from rotation matrix for specified axis sequence.
+
+    axes :
+    Note that many Euler angle triplets can describe one matrix.
+    :param matrix (torch.Tensor): of shape (..., 4, 4)
+    :param axes (str): One of 24 axis sequences as string or encoded tuple
+    :return ax (torch.Tensor): of shape (...,)
+    :return ay (torch.Tensor): of shape (...,)
+    :return az (torch.Tensor): of shape (...,)
+    """
+    try:
+        firstaxis, parity, repetition, frame = _AXES2TUPLE[axes.lower()]
+    except (AttributeError, KeyError):
+        _ = _TUPLE2AXES[axes]
+        firstaxis, parity, repetition, frame = axes
+
+    i = firstaxis
+    j = _NEXT_AXIS[i+parity]
+    k = _NEXT_AXIS[i-parity+1]
+
+    M = matrix[..., :3, :3] # (..., 3, 3)
+    if repetition:
+        sy = torch.sqrt(M[..., i, j]*M[..., i, j] + M[..., i, k]*M[..., i, k])
+        ay = torch.arctan2(sy, M[..., i, i])
+        ax = torch.zeros_like(ay, dtype=ay.dtype, device=ay.device)
+        az = torch.zeros_like(ay, dtype=ay.dtype, device=ay.device)
+        mask = sy > _EPS
+        ax[mask] = torch.arctan2( M[..., i, j][mask],  M[..., i, k][mask])
+        az[mask] = torch.arctan2( M[..., j, i][mask], -M[..., k, i][mask])
+        ax[~mask] = torch.arctan2(-M[..., j, k][~mask],  M[..., j, j][~mask])
+    else:
+        cy = torch.sqrt(M[..., i, i]*M[..., i, i] + M[..., j, i]*M[..., j, i])
+        ay = torch.arctan2(-M[..., k, i], cy)
+        ax = torch.zeros_like(ay, dtype=ay.dtype, device=ay.device)
+        az = torch.zeros_like(ay, dtype=ay.dtype, device=ay.device)
+        mask = cy > _EPS
+        ax[mask] = torch.arctan2( M[..., k, j][mask],  M[..., k, k][mask])
+        az[mask] = torch.arctan2( M[..., j, i][mask],  M[..., i, i][mask])
+        ax[~mask] = torch.arctan2(-M[..., j, k][~mask],  M[..., j, j][~mask])
+
+    if parity:
+        ax, ay, az = -ax, -ay, -az
+    if frame:
+        ax, az = az, ax
+    return ax, ay, az
+
+
+
 
 
