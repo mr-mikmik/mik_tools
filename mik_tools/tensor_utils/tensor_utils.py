@@ -64,6 +64,19 @@ def soft_minimum_log_barrier(x:torch.Tensor, z:torch.Tensor, alpha:float=1.0) ->
     return y_min_log_barrier
 
 
+def soft_unit_step(x:torch.Tensor, alpha:float=1.0) -> torch.Tensor:
+    """
+    Softened version of the unit step function (i.e. Compute the unit step function, i.e. 1 if x>0, 0 otherwise)
+    It is like the sigmoid function but with variable control of the slope.
+    :param x: (...,) tensor
+    :param alpha: float [0, inf] - the larger, the closer it is to the minimum. About 3.0 is a good value.
+    :return: (...,) tensor
+    """
+    # out = 1.0/(1.0 + torch.exp(-alpha*x))
+    out = torch.sigmoid(alpha*x) # this is equivalent as the expression above
+    return out
+
+
 def batched_index_select(X:Union[np.ndarray, torch.Tensor], indxs:Union[np.ndarray, torch.Tensor]) -> Union[np.ndarray, torch.Tensor]:
     """
     Batch select an array or tensor based on a batched set of indxs
