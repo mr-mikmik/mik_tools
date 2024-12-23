@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import torch.nn.functional as F
 from typing import Union, Tuple, List
 
 
@@ -43,7 +44,9 @@ def soft_maximum_log_barrier(x:torch.Tensor, z:torch.Tensor, alpha:float=1.0) ->
     Returns:
         out (torch.Tensor): of shape (..., )
     """
-    out = z + 1/alpha * torch.log(1 + torch.exp(alpha * (x - z)))
+    # out = z + 1/alpha * torch.log(1 + torch.exp(alpha * (x - z)))
+    # This is equivalent as the expression above, but for stability, it resolves to the linear case when (x-z)>threshold
+    out = z + F.softplus(x-z, beta=alpha, threshold=10)
     return out
 
 
@@ -55,7 +58,9 @@ def soft_minimum_log_barrier(x:torch.Tensor, z:torch.Tensor, alpha:float=1.0) ->
     :param alpha: float [0, inf] - the larger, the closer it is to the minimum. About 3.0 is a good value.
     :return: (...,) tensor
     """
-    y_min_log_barrier = z - 1 / alpha * torch.log(1 + torch.exp(-alpha * (x - z)))
+    # y_min_log_barrier = z - 1 / alpha * torch.log(1 + torch.exp(-alpha * (x - z)))
+    # This is equivalent as the expression above, but for stability, it resolves to the linear case when (z-x)>threshold
+    y_min_log_barrier = z - F.softplus(z-x, beta=alpha, threshold=10)
     return y_min_log_barrier
 
 
