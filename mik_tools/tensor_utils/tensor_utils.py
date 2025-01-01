@@ -35,6 +35,29 @@ def batched_eye_array(n:int, batch_shape:Union[Tuple, List]=()) -> np.ndarray:
     return eye
 
 
+def log_barrier(x:torch.Tensor, x_min:torch.Tensor, x_max:torch.Tensor, alpha:float=1.0, epsilon=1e-8) -> torch.Tensor:
+    """
+    Compute the log barrier function that penalizes the values outside the range (x_min, x_max)
+    Note if x==x_min or x==x_max, the function will return inf.
+    Args:
+        x (torch.Tensor): of shape (..., )
+        x_min (torch.Tensor): of shape (..., )
+        x_max (torch.Tensor): of shape (..., )
+        alpha (float): parameter of the log barrier [0, inf] - the larger, the closer it is to the minimum. About 3.0 is a good value.
+    Returns:
+        out (torch.Tensor): of shape (..., )
+    """
+    x_max = x_max + epsilon
+    x_min = x_min - epsilon
+    x_range = x_max - x_min
+    min_scaled = 2 * (x - x_min) / x_range
+    max_scaled = 2 * (x_max - x) / x_range
+    out = -torch.log(min_scaled) - torch.log(max_scaled)
+    out = alpha * out
+    # set out to 0 for cases where range is 0
+    return out
+
+
 def soft_maximum_log_barrier(x:torch.Tensor, z:torch.Tensor, alpha:float=1.0) -> torch.Tensor:
     """
     Compute the log barrier function
@@ -62,6 +85,18 @@ def soft_minimum_log_barrier(x:torch.Tensor, z:torch.Tensor, alpha:float=1.0) ->
     # This is equivalent as the expression above, but for stability, it resolves to the linear case when (z-x)>threshold
     y_min_log_barrier = z - F.softplus(z-x, beta=alpha, threshold=10)
     return y_min_log_barrier
+
+
+def soft_relu(x:torch.Tensor, alpha:float=1.0) -> torch.Tensor:
+    """
+    Softened version of the ReLU function
+    :param x: (...,) tensor
+    :param alpha: float [0, inf] - the larger, the closer it is to the minimum. About 3.0 is a good value.
+    :return: (...,) tensor
+    """
+    # out = torch.log(1 + torch.exp(alpha*x))/alpha
+    out = F.softplus(x, beta=alpha)
+    return out
 
 
 def soft_unit_step(x:torch.Tensor, alpha:float=1.0) -> torch.Tensor:
