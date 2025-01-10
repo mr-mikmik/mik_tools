@@ -5,7 +5,7 @@ from gym import spaces
 from tqdm import tqdm
 
 from mik_tools.dataset_tools.data_collection.data_collector_base import DataCollectorBase
-from mik_tools.env_tools.controller_base import RandomController
+from mik_tools.env_tools.controllers import RandomController
 from mik_tools.recording_utils.data_recording_wrappers import get_not_self_saved_keys
 
 
