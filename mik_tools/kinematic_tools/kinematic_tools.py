@@ -61,7 +61,7 @@ def exponential_map(skew_matrix:Union[np.ndarray, torch.Tensor]) -> Union[np.nda
         skew_matrix_squared = np.einsum('...ij,...jk->...ik', skew_matrix, skew_matrix)  # (..., 3, 3)
         exp_X = np.eye(3) + np.sin(theta) * skew_matrix + (1 - np.cos(theta)) * skew_matrix_squared # (..., 3, 3)
     elif isinstance(skew_matrix, torch.Tensor):
-        theta = torch.norm(skew_matrix_to_vector(skew_matrix), dim=-1, keepdim=True) # (..., 1)
+        theta = torch.norm(skew_matrix_to_vector(skew_matrix), dim=-1, keepdim=True).unsqueeze(-1) # (..., 1, 1)
         skew_matrix_squared = torch.einsum('...ij,...jk->...ik', skew_matrix, skew_matrix)  # (..., 3, 3)
         exp_X = torch.eye(3, device=skew_matrix.device, dtype=skew_matrix.dtype) + torch.sin(theta) * skew_matrix + (1 - torch.cos(theta)) * skew_matrix_squared # (..., 3, 3)
     else:
