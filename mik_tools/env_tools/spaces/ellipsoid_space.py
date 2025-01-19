@@ -4,51 +4,7 @@ from collections import OrderedDict
 import gym
 import time
 from typing import Dict, List, Optional, Sequence, SupportsFloat, Tuple, Type, Union
-from gym import logger
-from gym.spaces import Discrete
-from gym.spaces.space import Space
 from gym.utils import seeding
-
-
-class ConstantSpace(Space):
-    """
-    A space that always returns the same value.
-    Useful as a placeholder when no action is required.
-    """
-
-    def __init__(self, value: SupportsFloat):
-        self.value = value
-        super().__init__(shape=(), dtype=np.float32)
-
-    def sample(self):
-        return self.value
-
-    def contains(self, x) -> bool:
-        return x == self.value
-
-    def __repr__(self):
-        return "ConstantSpace({})".format(self.value)
-
-
-class ChoiceSpace(Discrete):
-    """
-    A space that returns one of the given values.
-    """
-
-    def __init__(self, choices: List[SupportsFloat]):
-        self.choices = choices
-        super().__init__(n=len(choices))
-
-    def sample(self, mask=None):
-        sample_indxs = super().sample(mask=mask)
-        return self.choices[sample_indxs]
-
-    def contains(self, x) -> bool:
-        return x in self.choices
-
-    def __repr__(self):
-        return "ChoiceSpace({})".format(self.choices)
-
 
 
 class EllipsoidSpace(gym.spaces.Space[np.ndarray]):
@@ -96,20 +52,10 @@ class EllipsoidSpace(gym.spaces.Space[np.ndarray]):
         return sample
 
 
-
-
-# DEBUG:
 if __name__ == '__main__':
-    # semiaxis_length = {'x':0.1, 'y':0.1, 'theta':1.5}
-    # ellipsoid_space = EllipsoidSpace(semiaxis_length=semiaxis_length)
-    # example_sample = ellipsoid_space.sample()
-    # ellipsoid_space.contains(example_sample)
+    semiaxis_length = {'x':0.1, 'y':0.1, 'theta':1.5}
+    ellipsoid_space = EllipsoidSpace(semiaxis_length=semiaxis_length)
+    example_sample = ellipsoid_space.sample()
+    ellipsoid_space.contains(example_sample)
 
-    # TEST choice space
-    # values = np.array(['mak', 'mek', 'mik'])
-    values = ['mak', 'mek', 'mik']
-    choice_space = ChoiceSpace(values)
-    example_sample = choice_space.sample()
-    print(example_sample)
-    print(choice_space.contains('mik'))
 
