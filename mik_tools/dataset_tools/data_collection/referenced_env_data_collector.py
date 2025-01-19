@@ -5,7 +5,8 @@ from mik_tools.dataset_tools.data_collection.env_data_collector import EnvDataCo
 
 class ReferencedEnvDataCollector(EnvDataCollector):
     """
-    Extends EnvDataCollector to record the reference state
+    Extends EnvDataCollector to record the reference state.
+    This reference state is stored from the environment's reference observation.
     """
     def __init__(self, *args, **kwargs):
         self.reference_fc = None

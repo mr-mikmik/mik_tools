@@ -24,10 +24,6 @@ class DataCollectorBase(abc.ABC):
         self.data_stats = {'collected': 0, 'to_collect': 0}
         self._load()
 
-    def _init_datacollection_params(self):
-        init_datacollection_params = {'filecode': 0}
-        return init_datacollection_params
-
     @property
     def filecode(self):
         return self.datacollection_params['filecode']
@@ -35,6 +31,61 @@ class DataCollectorBase(abc.ABC):
     @filecode.setter
     def filecode(self, value):
         self.datacollection_params['filecode'] = value
+
+    def get_new_filecode(self, update_memory=False):
+        self.filecode = self.filecode + 1
+        if update_memory:
+            self._save_datacollection_params()
+        return self.filecode
+
+    def collect_data(self, num_data):
+        # Display basic information
+        print('_____________________________')
+        print(' Data collection has started!')
+        print('  - The data will be saved at {}'.format(self.data_path))
+
+        # Collect data
+        pbar = tqdm(range(num_data), desc='Data Collected: ')
+        num_data_collected = 1
+        self.data_stats['to_collect'] = num_data
+        self.data_stats['collected'] = 0
+        for i in pbar:
+            pbar.set_postfix({'Filecode': self.filecode})
+            self.data_stats['collected'] = i
+            # Save data
+            sample_params = self._collect_data_sample()
+            # Log data sample info to data legend
+            self._log_data(sample_params)
+            time.sleep(0.5)
+            self.data_stats['collected'] += 1
+
+    @abc.abstractmethod
+    def _get_legend_column_names(self):
+        """
+        Return a list containing the column names of the datalegend
+        Returns:
+        """
+        pass
+
+    @abc.abstractmethod
+    def _get_legend_lines(self, data_params):
+        """
+        Return a list containing the values to log inot the data legend for the data sample with file code filecode
+        Args:
+            data_params: <dict> containg parameters of the collected data
+        Returns:
+        """
+        pass
+
+    @abc.abstractmethod
+    def _collect_data_sample(self, params=None):
+        """
+        Collect and save data to the designed path in self.data_path
+        Args:
+            params:
+        Returns: <dict> containing the parameters of the collected sample
+        """
+        pass
 
     def _load(self):
         # Load or Create the data infrastructure if it does not exist
@@ -44,9 +95,9 @@ class DataCollectorBase(abc.ABC):
             legend_df = pd.DataFrame(columns=self._get_legend_column_names())
             legend_df.to_csv(self.datalegend_path, index=False)
             self._save_data_params()
-            self._save_filecode_pickle()
+            self._save_datacollection_params()
         else:
-            self._load_filecode_pickle()
+            self._load_datacollection_params()
             self._compare_current_params_with_saved()
 
     def _filter_params_to_save(self, params_dict):
@@ -70,7 +121,6 @@ class DataCollectorBase(abc.ABC):
             else:
                 pass
                 # params_to_save[k] = str(v)
-
         return params_to_save
 
     def _save_data_params(self):
@@ -127,13 +177,9 @@ class DataCollectorBase(abc.ABC):
                     missmatched_params[key] = (param_a, param_b)
         return missmatched_params
 
-    def _save_filecode_pickle(self):
-        # TODO: Update the method name, since we do not longer pickle, yaml instead
-        self._save_datacollection_params()
-
-    def _load_filecode_pickle(self):
-        # TODO: Update the method name, since we do not longer pickle, yaml instead
-        self._load_datacollection_params()
+    def _init_datacollection_params(self):
+        init_datacollection_params = {'filecode': 0}
+        return init_datacollection_params
 
     def _save_datacollection_params(self):
         with open(self.datacollection_params_yaml_path, 'w') as f:
@@ -143,40 +189,6 @@ class DataCollectorBase(abc.ABC):
         with open(self.datacollection_params_yaml_path, 'r') as f:
             datacollection_params = yaml.load(f, Loader=yaml.FullLoader)
         self.datacollection_params = datacollection_params
-
-    def get_new_filecode(self, update_pickle=False):
-        self.filecode = self.filecode + 1
-        if update_pickle:
-            self._save_filecode_pickle()
-        return self.filecode
-
-    @abc.abstractmethod
-    def _get_legend_column_names(self):
-        """
-        Return a list containing the column names of the datalegend
-        Returns:
-        """
-        pass
-
-    @abc.abstractmethod
-    def _get_legend_lines(self, data_params):
-        """
-        Return a list containing the values to log inot the data legend for the data sample with file code filecode
-        Args:
-            data_params: <dict> containg parameters of the collected data
-        Returns:
-        """
-        pass
-
-    @abc.abstractmethod
-    def _collect_data_sample(self, params=None):
-        """
-        Collect and save data to the designed path in self.data_path
-        Args:
-            params:
-        Returns: <dict> containing the parameters of the collected sample
-        """
-        pass
 
     def _get_data_path(self, data_path=None):
         if data_path is None:
@@ -191,33 +203,21 @@ class DataCollectorBase(abc.ABC):
         filename = data_path.split('/')[-1]
         return data_path, filename
 
-    def collect_data(self, num_data):
-        # Display basic information
-        print('_____________________________')
-        print(' Data collection has started!')
-        print('  - The data will be saved at {}'.format(self.data_path))
+    def _log_data(self, sample_params:dict):
+        """
+        Update the datalegend file
+        :param sample_params:
+        :return:
+        """
+        legend_lines_vals = self._get_legend_lines(sample_params)
+        num_data_collected = len(legend_lines_vals)
+        # ensures full numpy array printed without ellipsis
+        np.set_printoptions(threshold=sys.maxsize)
+        with open(self.datalegend_path, 'a+') as csv_file:
+            csv_file_writer = csv.writer(csv_file)
+            for line_val in legend_lines_vals:
+                csv_file_writer.writerow(line_val)
+        csv_file.close()  # make sure it is closed
+        # Update the datacollection params
+        self._save_datacollection_params()
 
-        # Collect data
-        pbar = tqdm(range(num_data), desc='Data Collected: ')
-        num_data_collected = 1
-        self.data_stats['to_collect'] = num_data
-        self.data_stats['collected'] = 0
-        for i in pbar:
-            pbar.set_postfix({'Filecode': self.filecode})
-            self.data_stats['collected'] = i
-            # Save data
-            sample_params = self._collect_data_sample()
-            # Log data sample info to data legend
-            legend_lines_vals = self._get_legend_lines(sample_params)
-            num_data_collected = len(legend_lines_vals)
-            # ensures full numpy array printed without ellipsis
-            np.set_printoptions(threshold=sys.maxsize)
-            with open(self.datalegend_path, 'a+') as csv_file:
-                csv_file_writer = csv.writer(csv_file)
-                for line_val in legend_lines_vals:
-                    csv_file_writer.writerow(line_val)
-            csv_file.close() # make sure it is closed
-            # Update the filecode
-            self._save_filecode_pickle()
-            time.sleep(0.5)
-            self.data_stats['collected'] += 1

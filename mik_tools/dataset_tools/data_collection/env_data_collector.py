@@ -12,7 +12,7 @@ from mik_tools.recording_utils.data_recording_wrappers import get_not_self_saved
 class EnvDataCollector(DataCollectorBase):
 
     def __init__(self, env, *args, scene_name='env_data_collection', manual_actions=False, reuse_prev_observation=False,
-                 trajectory_length=1, reset_trajectories=False, controller=None, **kwargs):
+                 trajectory_length=1, reset_trajectories=False, controller=None, save_trajectory_on_the_fly=False, **kwargs):
         """
         Class used to collect data from an environment. It performs steps and collects the observations and actions.
         :param env:
@@ -31,23 +31,13 @@ class EnvDataCollector(DataCollectorBase):
         self.reuse_prev_observation = reuse_prev_observation
         self.trajectory_length = trajectory_length
         self.reset_trajectories = reset_trajectories
+        self.save_trajectory_on_the_fly = save_trajectory_on_the_fly
         self.env_needs_reset = False
         self.prev_obs = None # stores the previous observation
         self.prev_obs_fc = None
         self.prev_info = None
         super().__init__(*args, **kwargs)
         self.data_save_params = {'save_path': self.data_path, 'scene_name': self.scene_name}
-        # TODO: Save env parameters
-
-    def _init_datacollection_params(self):
-        init_datacollection_params = super()._init_datacollection_params()
-        init_datacollection_params['trajectory_indx'] = 0
-        return init_datacollection_params
-
-    def _get_controller(self, controller):
-        if controller is None:
-            controller = RandomController(env=self.env)
-        return controller
 
     @property
     def trajectory_indx(self):
@@ -62,6 +52,16 @@ class EnvDataCollector(DataCollectorBase):
         if update:
             self._save_datacollection_params()
         return self.trajectory_indx
+
+    def _init_datacollection_params(self):
+        init_datacollection_params = super()._init_datacollection_params()
+        init_datacollection_params['trajectory_indx'] = 0
+        return init_datacollection_params
+
+    def _get_controller(self, controller):
+        if controller is None:
+            controller = RandomController(env=self.env)
+        return controller
 
     def _get_trajectory_length(self):
         return self.trajectory_length
@@ -190,9 +190,19 @@ class EnvDataCollector(DataCollectorBase):
             sample_params.append(sample_params_i)
             if sample_params_i['done']:
                 break
+            if self.save_trajectory_on_the_fly:
+                self._log_data_on_the_fly(sample_params_i)
+
         if self.reset_trajectories and self.data_stats['collected'] < self.data_stats['to_collect'] - 1:
             self.env_needs_reset = True
         return sample_params
+
+    def _log_data(self, sample_params):
+        if not self.save_trajectory_on_the_fly:
+            super()._log_data(sample_params)
+
+    def _log_data_on_the_fly(self, sample_params):
+        super()._log_data([sample_params])
 
     def _get_action(self, obs, info=None):
         action = self.controller.control(obs, info=info)
