@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from scipy.linalg import expm
 from typing import List, Tuple, Union
 
 from mik_tools import tr, pose_to_matrix, transform_matrix_inverse
@@ -57,13 +58,20 @@ def exponential_map(skew_matrix:Union[np.ndarray, torch.Tensor]) -> Union[np.nda
         exp: so(3) -> SO(3)  where  R = exp(X) where X is a skew symmetric matrix
     """
     if isinstance(skew_matrix, np.ndarray):
-        theta = np.linalg.norm(skew_matrix_to_vector(skew_matrix), axis=-1, keepdims=True)  # (..., 1)
-        skew_matrix_squared = np.einsum('...ij,...jk->...ik', skew_matrix, skew_matrix)  # (..., 3, 3)
-        exp_X = np.eye(3) + np.sin(theta) * skew_matrix + (1 - np.cos(theta)) * skew_matrix_squared # (..., 3, 3)
+        # theta = np.linalg.norm(skew_matrix_to_vector(skew_matrix), axis=-1, keepdims=True)  # (..., 1)
+        # skew_matrix_squared = np.einsum('...ij,...jk->...ik', skew_matrix, skew_matrix)  # (..., 3, 3)
+        # exp_X = np.eye(3) + np.sin(theta) * skew_matrix + (1 - np.cos(theta)) * skew_matrix_squared # (..., 3, 3)
+        exp_X = expm(skew_matrix) # (..., 3, 3)
     elif isinstance(skew_matrix, torch.Tensor):
-        theta = torch.norm(skew_matrix_to_vector(skew_matrix), dim=-1, keepdim=True).unsqueeze(-1) # (..., 1, 1)
-        skew_matrix_squared = torch.einsum('...ij,...jk->...ik', skew_matrix, skew_matrix)  # (..., 3, 3)
-        exp_X = torch.eye(3, device=skew_matrix.device, dtype=skew_matrix.dtype) + torch.sin(theta) * skew_matrix + (1 - torch.cos(theta)) * skew_matrix_squared # (..., 3, 3)
+        # rotation_vector = skew_matrix_to_vector(skew_matrix) # (..., 3)
+        # theta = torch.norm(skew_matrix_to_vector(skew_matrix), dim=-1, keepdim=True) # (..., 1)
+        # # NOTE: For small thetas, we can use the Taylor series expansion
+        # # exp(skew_matrix) ≈ I + skew_matrix
+        # axis = rotation_vector / theta  # (..., 3)
+        # axis_skew = vector_to_skew_matrix(axis) # (..., 3, 3)
+        # axis_skew_squared = torch.einsum('...ij,...jk->...ik', axis_skew, axis_skew)  # (..., 3, 3)
+        # exp_X = torch.eye(3, device=skew_matrix.device, dtype=skew_matrix.dtype) + torch.sin(theta) * axis_skew + (1 - torch.cos(theta)) * axis_skew_squared # (..., 3, 3)
+        exp_X = torch.matrix_exp(skew_matrix)
     else:
         raise ValueError(f'skew_matrix must be a numpy array or a torch tensor. Got {type(skew_matrix)}')
     return exp_X
