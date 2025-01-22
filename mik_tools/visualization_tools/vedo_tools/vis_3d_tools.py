@@ -50,7 +50,7 @@ def draw_box(box_size, w_pose_of, color=None, alpha=1.0, viz=None):
 def draw_cylinder(radius, height, w_pose_of, color=None, alpha=1.0, viz=None):
     # cylinder oriented along the z axis
     viz = get_default_viz(viz)
-    obj = vedo.Cylinder(pos=w_pose_of[:3], r=radius, height=height, axis=(0, 0, 1))
+    obj = vedo.Cylinder(r=radius, height=height, axis=(0, 0, 1))
     if color is not None:
         obj.color(c=color, alpha=alpha)
     # transform it to the pose
