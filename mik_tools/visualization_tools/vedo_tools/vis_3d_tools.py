@@ -47,6 +47,19 @@ def draw_box(box_size, w_pose_of, color=None, alpha=1.0, viz=None):
     return viz
 
 
+def draw_cylinder(radius, height, w_pose_of, color=None, alpha=1.0, viz=None):
+    # cylinder oriented along the z axis
+    viz = get_default_viz(viz)
+    obj = vedo.Cylinder(pos=w_pose_of[:3], r=radius, height=height, axis=(0, 0, 1))
+    if color is not None:
+        obj.color(c=color, alpha=alpha)
+    # transform it to the pose
+    w_X_of = pose_to_matrix(w_pose_of)
+    obj_mesh_w = obj.apply_transform(w_X_of)
+    viz += [obj_mesh_w]
+    return viz
+
+
 def draw_plane(w_X_pf, color=None, size_x=1, size_y=1, viz=None, alpha=1.0):
     # w_X_pf: (4, 4) as the pose of the plane frame w.r.t the world frame
     viz = get_default_viz(viz)
