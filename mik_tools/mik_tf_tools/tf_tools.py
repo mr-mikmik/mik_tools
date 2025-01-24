@@ -16,18 +16,38 @@ def pose_to_matrix(pose):
     """
     if torch.is_tensor(pose):
         pos = pose[..., :3]  # (..., 3)
-        quat = pose[..., 3:]  # (..., 4)
-        pose_matrix = tr.quaternion_matrix_batched_tensor(quat)  # (..., 4, 4)
+        if pose.shape[-1] == 7:
+            # if the pose has the quaternion
+            quat = pose[..., 3:]  # (..., 4)
+            pose_matrix = tr.quaternion_matrix_batched_tensor(quat)  # (..., 4, 4)
+        elif pose.shape[-1] == 6:
+            # if the pose has the euler angles
+            pose_matrix = tr.euler_matrix_tensor(pose[..., 3], pose[..., 4], pose[..., 5])
+        else:
+            raise ValueError('pose must have 6 or 7 elements in the last dimension, but it has {}'.format(pose.shape[-1]))
         pose_matrix[..., :3, 3] = pos
     elif type(pose) == np.ndarray:
         if len(pose.shape) == 1:
-            pos, quat = np.split(pose, [3])
-            pose_matrix = tr.quaternion_matrix(quat)
-            pose_matrix[:3, 3] = pos
+            if pose.shape[-1] == 7:
+                pos = pose[:3]
+                quat = pose[3:]
+                pose_matrix = tr.quaternion_matrix(quat)
+                pose_matrix[:3, 3] = pos
+            elif pose.shape[-1] == 6:
+                pos = pose[:3]
+                pose_matrix = tr.euler_matrix(pose[3:4], pose[4:5], pose[5:6])
+                pose_matrix[:3, 3] = pos
+            else:
+                raise ValueError('pose must have 6 or 7 elements in the last dimension, but it has {}'.format(pose.shape[-1]))
         else:
             pos = pose[..., :3] # (..., 3)
-            quat = pose[..., 3:] # (..., 4)
-            pose_matrix = tr.quaternion_matrix_batched_array(quat) # (..., 4, 4)
+            if pose.shape[-1] == 7:
+                quat = pose[..., 3:] # (..., 4)
+                pose_matrix = tr.quaternion_matrix_batched_array(quat) # (..., 4, 4)
+            elif pose.shape[-1] == 6:
+                pose_matrix = tr.euler_matrix_array(pose[..., 3], pose[..., 4], pose[..., 5])
+            else:
+                raise ValueError('pose must have 6 or 7 elements in the last dimension, but it has {}'.format(pose.shape[-1]))
             pose_matrix[..., :3, 3] = pos
     else:
         raise TypeError('pose must be a torch tensor or a numpy array, but it is {}'.format(type(pose)))
