@@ -90,7 +90,8 @@ def log_map(rotation_matrix:Union[np.ndarray, torch.Tensor]) -> Union[np.ndarray
         skew_matrix = logm(rotation_matrix) # (..., 3, 3)
     elif isinstance(rotation_matrix, torch.Tensor):
         # NOTE, unlike the torch.matrix_exp, torch.matrix_log is not implemented. Therefore, to do this, we will have a custom implementation:
-        theta = torch.acos((torch.trace(rotation_matrix) - 1) / 2).unsqueeze(-1).unsqueeze(-1) # (..., 1, 1)
+        rotation_matrix_trace = torch.diagonal(rotation_matrix, dim1=-2, dim2=-1).sum(-1) # (...,)
+        theta = torch.acos((rotation_matrix_trace - 1) / 2).unsqueeze(-1).unsqueeze(-1) # (..., 1, 1)
         skew_matrix = theta / (2 * torch.sin(theta)) * (rotation_matrix - rotation_matrix.transpose(-1, -2)) # (..., 3, 3)
         # skew_matrix = torch.matrix_log(skew_matrix)
         # for small thetas, we can use the Taylor series expansion
