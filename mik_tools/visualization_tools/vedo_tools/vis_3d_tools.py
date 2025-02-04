@@ -180,7 +180,7 @@ def draw_torque(torque_w, point=None, viz=None, color='r'):
     # w_pose_of = eye_pose  # matrix_to_pose(torque_w) # TODO: Fix this
     w_pose_of = np.concatenate([point, tr.quaternion_about_axis(angle, rot_axis)])
     scale = 1.0 * torque_norm
-    mesh_path = get_mesh_path('torque_arrow')
+    mesh_path = get_mesh_path('torque_arrow.stl')
     viz = draw_mesh_from_path(mesh_path=mesh_path, w_pose_of=w_pose_of, color=color, scale=scale, viz=viz)
     return viz
 
