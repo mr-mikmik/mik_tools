@@ -9,11 +9,13 @@ CONFIG_PATH = os.path.join(PACKAGE_PATH, 'config')
 MODELS_PATH = os.path.join(PACKAGE_PATH, 'models')
 
 
-def get_mesh_dir_path(collision=False, visual=False):
+def get_mesh_dir_path(collision=False, visual=False, test=False):
     if collision:
         mesh_dir_path = os.path.join(MESHES_PATH, 'collision')
     elif visual:
         mesh_dir_path = os.path.join(MESHES_PATH, 'visual')
+    elif test:
+        mesh_dir_path = os.path.join(MESHES_PATH, 'test_meshes')
     else:
         mesh_dir_path = MESHES_PATH
     return mesh_dir_path
@@ -29,5 +31,11 @@ def get_dataset_path(dataset_name=None):
 
 def get_mesh_path(mesh_name):
     mesh_dir_path = MESHES_PATH
-    mesh_path = os.path.join(mesh_dir_path, f'{mesh_name}.stl')
+    mesh_path = os.path.join(mesh_dir_path, mesh_name)
+    return mesh_path
+
+
+def get_test_mesh_path(mesh_name):
+    mesh_dir_path = get_mesh_dir_path(test=True)
+    mesh_path = os.path.join(mesh_dir_path, mesh_name)
     return mesh_path

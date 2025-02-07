@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from scipy.linalg import expm
+from scipy.linalg import expm, logm
 from typing import List, Tuple, Union
 
 from mik_tools import tr, pose_to_matrix, transform_matrix_inverse
@@ -75,6 +75,32 @@ def exponential_map(skew_matrix:Union[np.ndarray, torch.Tensor]) -> Union[np.nda
     else:
         raise ValueError(f'skew_matrix must be a numpy array or a torch tensor. Got {type(skew_matrix)}')
     return exp_X
+
+
+def log_map(rotation_matrix:Union[np.ndarray, torch.Tensor]) -> Union[np.ndarray, torch.Tensor]:
+    """
+    Get the log map of a matrix.
+    :param rotation_matrix: (..., 3, 3)
+    :return:
+    """
+    if isinstance(rotation_matrix, np.ndarray):
+        # theta = np.linalg.norm(skew_matrix_to_vector(skew_matrix), axis=-1, keepdims=True)  # (..., 1)
+        # skew_matrix_squared = np.einsum('...ij,...jk->...ik', skew_matrix, skew_matrix)  # (..., 3, 3)
+        # exp_X = np.eye(3) + np.sin(theta) * skew_matrix + (1 - np.cos(theta)) * skew_matrix_squared # (..., 3, 3)
+        skew_matrix = logm(rotation_matrix) # (..., 3, 3)
+    elif isinstance(rotation_matrix, torch.Tensor):
+        # NOTE, unlike the torch.matrix_exp, torch.matrix_log is not implemented. Therefore, to do this, we will have a custom implementation:
+        rotation_matrix_trace = torch.diagonal(rotation_matrix, dim1=-2, dim2=-1).sum(-1) # (...,)
+        theta = torch.acos((rotation_matrix_trace - 1) / 2).unsqueeze(-1).unsqueeze(-1) # (..., 1, 1)
+        skew_matrix = theta / (2 * torch.sin(theta)) * (rotation_matrix - rotation_matrix.transpose(-1, -2)) # (..., 3, 3)
+        # skew_matrix = torch.matrix_log(skew_matrix)
+        # for small thetas, we can use the Taylor series expansion
+        # log(R) ≈ zeros
+        mask = torch.abs(theta[...,0,0]) < 1e-6
+        skew_matrix[mask] = 0.
+    else:
+        raise ValueError(f'rotation_matrix must be a numpy array or a torch tensor. Got {type(rotation_matrix)}')
+    return skew_matrix
 
 
 def get_adjoint_matrix(T=None, R=None, t=None) -> Union[np.ndarray, torch.Tensor]:

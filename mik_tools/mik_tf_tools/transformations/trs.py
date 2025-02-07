@@ -30,7 +30,7 @@ def rotation_to_transform(rotation_matrix: Union[torch.tensor, np.ndarray]) -> U
     return transform_matrix
 
 
-def euler_matrix(ai:Union[torch.Tensor, np.ndarray], aj:Union[torch.Tensor, np.ndarray], ak:Union[torch.Tensor, np.ndarray], axes='sxyz') -> [torch.Tensor, np.ndarray]:
+def euler_matrix(ai:Union[torch.Tensor, np.ndarray, float, int], aj:Union[torch.Tensor, np.ndarray, float, int], ak:Union[torch.Tensor, np.ndarray, float, int], axes='sxyz') -> [torch.Tensor, np.ndarray]:
     """
     Return homogeneous rotation matrix from Euler angles and axis sequence.
     :param ai: (torch.Tensor or np.ndarray) of shape (...,)
@@ -43,6 +43,8 @@ def euler_matrix(ai:Union[torch.Tensor, np.ndarray], aj:Union[torch.Tensor, np.n
         M = euler_matrix_tensor(ai=ai, aj=aj, ak=ak, axes=axes)
     elif type(ai) is np.ndarray and type(aj) is np.ndarray and type(ak) is np.ndarray:
         M = euler_matrix_array(ai=ai, aj=aj, ak=ak, axes=axes)
+    elif type(ai) in [float, int] and type(aj) in [float, int] and type(ak) in [float, int]:
+        M = euler_matrix_array(ai=np.array([ai]), aj=np.array([aj]), ak=np.array([ak]), axes=axes)
     else:
         raise NotImplementedError(f'Input types not tensor or array (types: ai {type(ai)} aj {type(aj)} ak {type(ak)}')
     return M
