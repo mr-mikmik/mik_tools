@@ -96,8 +96,8 @@ class VisionSceneRenderer(object):
         """
         vision_observations = []
         for vision_indx in range(len(self.vision_cameras)):
-            vision_depth_i = self._render_vision_color_indx(w_X_of, vision_indx)
-            vision_observations.append(vision_depth_i)
+            vision_color_i = self._render_vision_color_indx(w_X_of, vision_indx)
+            vision_observations.append(vision_color_i)
         return vision_observations
 
     def _render_vision_indx(self, w_X_of:np.ndarray, vision_indx:int) -> np.ndarray:
