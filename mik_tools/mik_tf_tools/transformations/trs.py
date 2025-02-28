@@ -44,7 +44,7 @@ def euler_matrix(ai:Union[torch.Tensor, np.ndarray, float, int], aj:Union[torch.
     elif type(ai) is np.ndarray and type(aj) is np.ndarray and type(ak) is np.ndarray:
         M = euler_matrix_array(ai=ai, aj=aj, ak=ak, axes=axes)
     elif type(ai) in [float, int] and type(aj) in [float, int] and type(ak) in [float, int]:
-        M = euler_matrix_array(ai=np.array([ai]), aj=np.array([aj]), ak=np.array([ak]), axes=axes)
+        M = euler_matrix_array(ai=np.array([ai]), aj=np.array([aj]), ak=np.array([ak]), axes=axes)[0]
     else:
         raise NotImplementedError(f'Input types not tensor or array (types: ai {type(ai)} aj {type(aj)} ak {type(ak)}')
     return M
@@ -594,13 +594,12 @@ def euler_matrix_array(ai:np.ndarray, aj:np.ndarray, ak:np.ndarray, axes='sxyz')
         ai, ak = ak, ai
     if parity:
         ai, aj, ak = -ai, -aj, -ak
-
     si, sj, sk = np.sin(ai), np.sin(aj), np.sin(ak) # (...,), (...,), (...,)
     ci, cj, ck = np.cos(ai), np.cos(aj), np.cos(ak) # (...,), (...,), (...,)
     cc, cs = ci*ck, ci*sk # (...,), (...,)
     sc, ss = si*ck, si*sk # (...,), (...,)
 
-    M = batched_eye_array(4, batch_shape=ai.shape[:-1]) # (..., 4, 4)
+    M = batched_eye_array(4, batch_shape=ai.shape) # (..., 4, 4)
     if repetition:
         M[..., i, i] = cj
         M[..., i, j] = sj*si
