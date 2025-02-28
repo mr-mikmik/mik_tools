@@ -71,7 +71,10 @@ def view_mesh(mesh):
     triangles = np.asarray(mesh.triangles)
 
     # pack all colors:
-    vertices_colors = np.asarray(mesh.vertex_colors)
+    try:
+        vertices_colors = np.asarray(mesh.vertex_colors)
+    except:
+        vertices_colors = []
     if len(vertices_colors) > 0:
         colors = np.stack([
             vertices_colors[triangles[:, 0]],
