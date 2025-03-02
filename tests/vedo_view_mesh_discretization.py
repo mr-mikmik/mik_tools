@@ -47,3 +47,5 @@ _ = draw_mesh(mesh, w_pose_of=eye_pose, color=None, alpha=1.0, viz=viz)
 viz = draw_vectors(points, normals_As, color='blue', viz=viz)
 
 viz.show().interactive()
+
+
