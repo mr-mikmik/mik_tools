@@ -273,7 +273,8 @@ def quaternion_from_matrix(matrix):
     Return quaternion from rotation matrix.
     """
     q = np.empty((4, ), dtype=np.float64)
-    M = np.array(matrix, dtype=np.float64, copy=False)[:4, :4]
+    # M = np.array(matrix, dtype=np.float64, copy=False)[:4, :4]
+    M = np.asarray(matrix)
     t = np.trace(M)
     if t > M[3, 3]:
         q[3] = t

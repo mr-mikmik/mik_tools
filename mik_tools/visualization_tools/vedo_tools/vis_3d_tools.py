@@ -17,7 +17,7 @@ def get_object_mesh(mesh_path:str, scale=1.0):
     return obj_mesh
 
 
-def draw_mesh(obj_mesh_of, w_pose_of, color=None, alpha=1.0, viz=None):
+def draw_mesh(obj_mesh_of:vedo.Mesh, w_pose_of, color=None, alpha=1.0, viz=None):
     viz = get_default_viz(viz)
     # paint the mesh
     if color is not None:
