@@ -22,6 +22,8 @@ def draw_mesh(obj_mesh_of:vedo.Mesh, w_pose_of, color=None, alpha=1.0, viz=None)
     # paint the mesh
     if color is not None:
         obj_mesh_of.color(c=color, alpha=alpha)
+    else:
+        obj_mesh_of.alpha(opacity=alpha)
     # transform it to the pose
     w_X_of = pose_to_matrix(w_pose_of)
     obj_mesh_w = obj_mesh_of.apply_transform(w_X_of)
