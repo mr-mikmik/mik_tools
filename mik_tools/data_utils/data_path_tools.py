@@ -68,6 +68,19 @@ def get_pointcloud_path(save_path, scene_name, camera_name, fc):
     return full_path
 
 
+def get_image_path(save_path, scene_name, camera_name, fc, image_name='image', as_numpy=False):
+    if include_scene_name_to_file_name:
+        filename = '{}_{}_{:06d}'.format(scene_name, image_name, fc)
+    else:
+        filename = '{}_{:06d}'.format(image_name, fc)
+    save_path = os.path.join(save_path, scene_name, camera_name, '{}_data'.format(image_name))
+    if as_numpy:
+        full_path = os.path.join(save_path, '{}.npy'.format(filename))
+    else:
+        full_path = os.path.join(save_path, '{}.png'.format(filename))
+    return full_path
+
+
 def get_image_color_path(save_path, scene_name, camera_name, fc, as_numpy=False):
     if include_scene_name_to_file_name:
         filename = '{}_color_{:06d}'.format(scene_name, fc)

@@ -30,6 +30,14 @@ def record_point_cloud(pc, save_path, scene_name, camera_name, fc):
     save_pointcloud(pc, filename=filename_only, save_path=save_path)
 
 
+def record_image(img, save_path, scene_name, camera_name, fc,  image_name='image', save_as_numpy=False):
+    full_path = data_path_tools.get_image_path(save_path=save_path, scene_name=scene_name, camera_name=camera_name, fc=fc, image_name=image_name, as_numpy=save_as_numpy)
+    save_path, filename = data_path_tools.split_full_path(full_path)
+    filename_only, extension = data_path_tools.split_filename(filename)
+    file_save_path = save_image(img, filename=filename_only, save_path=save_path, save_as_numpy=save_as_numpy)
+    return file_save_path
+
+
 def record_image_color(img, save_path, scene_name, camera_name, fc, save_as_numpy=False):
     full_path = data_path_tools.get_image_color_path(save_path=save_path, scene_name=scene_name, camera_name=camera_name, fc=fc, as_numpy=save_as_numpy)
     save_path, filename = data_path_tools.split_full_path(full_path)

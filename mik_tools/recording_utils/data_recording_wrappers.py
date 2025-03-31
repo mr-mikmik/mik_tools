@@ -1,5 +1,5 @@
 from mik_tools.wrapping_utils.wrapping_utils import ClassWrapper
-from mik_tools.recording_utils.recording_utils import record_image_color, record_image_depth, \
+from mik_tools.recording_utils.recording_utils import record_image_color, record_image_depth, record_image, \
     record_camera_info_color, record_camera_info_depth, record_point_cloud, record_actions, \
     record_shear_deformation, record_shear_image, record_pressure, record_array, record_deformation_image, record_controller_info, record_image_depth_filtered
 
@@ -44,6 +44,21 @@ class PressureSelfSavedWrapper(ArraySelfSavedWrapper):
         scene_name = self.data_params['scene_name']
         camera_name = self.data_params['camera_name']
         record_pressure(self.data, save_path=save_path, scene_name=scene_name, camera_name=camera_name, fc=fc)
+
+
+class ImageSelfSavedWrapper(DataSelfSavedWrapper):
+
+    def save_fc(self, fc):
+        save_path = self.data_params['save_path']
+        scene_name = self.data_params['scene_name']
+        camera_name = self.data_params['camera_name']
+        additional_params = {}
+        if 'image_name' in self.data_params:
+            # If there is a specific image name to save
+            additional_params['image_name'] = self.data_params['image_name']
+        if 'save_as_numpy' in self.data_params:
+            additional_params['save_as_numpy'] = self.data_params['save_as_numpy']
+        record_image(self.data, save_path=save_path, scene_name=scene_name, camera_name=camera_name, fc=fc, **additional_params)
 
 
 class ColorImageSelfSavedWrapper(DataSelfSavedWrapper):
