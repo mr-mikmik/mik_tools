@@ -3,6 +3,7 @@ import torch
 
 from mik_tools.mik_tf_tools.tf_tools import transform_matrix_inverse, transform_points_3d
 
+
 def project_depth_image(depth_img, K, usvs=None):
     """
     Return xyz coordinates in the optical frame (z-axis is the camera axis)

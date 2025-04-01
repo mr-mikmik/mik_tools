@@ -144,7 +144,10 @@ def save_image(img, filename, save_path, save_as_numpy=False):
         if not mode_i in mode:
             raise NotImplementedError('Mode {} not supported yet. We support: {}'.format(mode_i, mode.keys()))
         try:
-            pil_img = imm.fromarray(img, mode=mode[mode_i])
+            if mode[mode_i] in ['L']:
+                pil_img = imm.fromarray(img[...,0], mode=mode[mode_i]) # (H,W)
+            else:
+                pil_img = imm.fromarray(img, mode=mode[mode_i])
             pil_img.save(file_save_path)
         except (ValueError, TypeError) as e:
             file_save_path = os.path.join(save_path, '{}.npy'.format(filename))
