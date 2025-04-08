@@ -2,8 +2,11 @@ import os
 
 import numpy as np
 try:
-    import open3d as o3d
-    from open3d.visualization import Visualizer
+    # check if is macos
+    import sys
+    if not sys.platform == 'darwin':
+        import open3d as o3d
+        from open3d.visualization import Visualizer
 except (ModuleNotFoundError, ImportError):
     pass
 import torch

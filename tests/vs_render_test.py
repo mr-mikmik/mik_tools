@@ -1,14 +1,21 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from mik_tools import matrix_to_pose, pose_to_matrix, tr, transform_matrix_inverse, get_dataset_path
-from mik_tools.camera_tools.cnos import CNOS
 from mik_tools.camera_tools.camera_utils import compute_camera_pose
 from mik_tools.rendering_tools import Camera
 from mik_tools.rendering_tools import VisionSceneRenderer
+from mik_tools.aux.package_utils import get_test_mesh_path
+
+import os
+
+
+if 'WAYLAND_DISPLAY' in os.environ and 'PYOPENGL_PLATFORM' not in os.environ:
+    os.environ['PYOPENGL_PLATFORM'] = 'egl'
+if 'WAYLAND_DISPLAY' in os.environ:
+    del os.environ['WAYLAND_DISPLAY']
 
 shape_id = 'strawberry'
-mesh_path = '/home/mik/robot_ws/src/megapose6d_ros/meshes/strawberry/nontextured.ply'
+mesh_path = get_test_mesh_path(f'{shape_id}.ply')
 
 w_pose_cf = compute_camera_pose(np.array([.2, 0.0, 0.0]), np.array([0.0, 0.0, 0.0]))
 K = np.array([[600., 0., 320.], [0., 600., 240.], [0., 0., 1.]])
