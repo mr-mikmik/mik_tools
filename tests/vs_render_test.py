@@ -6,13 +6,6 @@ from mik_tools.rendering_tools import Camera
 from mik_tools.rendering_tools import VisionSceneRenderer
 from mik_tools.aux.package_utils import get_test_mesh_path
 
-import os
-
-
-if 'WAYLAND_DISPLAY' in os.environ and 'PYOPENGL_PLATFORM' not in os.environ:
-    os.environ['PYOPENGL_PLATFORM'] = 'egl'
-if 'WAYLAND_DISPLAY' in os.environ:
-    del os.environ['WAYLAND_DISPLAY']
 
 shape_id = 'strawberry'
 mesh_path = get_test_mesh_path(f'{shape_id}.ply')
