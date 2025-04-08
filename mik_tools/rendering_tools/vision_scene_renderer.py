@@ -209,6 +209,9 @@ class VisionSceneRenderer(object):
         color_imgs = color_imgs.reshape(*batch_dims, *color_imgs.shape[-3:])  # (..., w, h, 3)
         depth_imgs = depth_imgs.reshape(*batch_dims, *depth_imgs.shape[-2:])  # (..., w, h)
 
+        # NOTE: color images are BGR format, sow we need ot convert them to RGB
+        color_imgs = np.flip(color_imgs, axis=-1) # (..., w, h, 3) as RGB
+
         return color_imgs, depth_imgs
 
     def _render_camera_object_poses_depth(self, w_X_of: np.ndarray, camera: Camera, camera_node) -> np.ndarray:
