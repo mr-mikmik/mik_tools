@@ -12,7 +12,7 @@ from mik_tools.recording_utils.data_recording_wrappers import get_not_self_saved
 class EnvDataCollector(DataCollectorBase):
 
     def __init__(self, env, *args, scene_name='env_data_collection', manual_actions=False, reuse_prev_observation=False,
-                 trajectory_length=1, reset_trajectories=False, controller=None, save_trajectory_on_the_fly=False, **kwargs):
+                 trajectory_length=1, reset_trajectories=False, controller=None, save_trajectory_on_the_fly=False, additional_info={}, **kwargs):
         """
         Class used to collect data from an environment. It performs steps and collects the observations and actions.
         :param env:
@@ -32,6 +32,7 @@ class EnvDataCollector(DataCollectorBase):
         self.trajectory_length = trajectory_length
         self.reset_trajectories = reset_trajectories
         self.save_trajectory_on_the_fly = save_trajectory_on_the_fly
+        self.additional_info = additional_info
         self.env_needs_reset = False
         self.prev_obs = None # stores the previous observation
         self.prev_obs_fc = None
@@ -128,7 +129,7 @@ class EnvDataCollector(DataCollectorBase):
         obs_keys_to_save = self._get_observation_keys_to_save(test_obs)
         init_obs_keys_to_save = ['{}_init'.format(k) for k in obs_keys_to_save]
         final_obs_keys_to_save = ['{}_final'.format(k) for k in obs_keys_to_save]
-        column_names = ['Scene', 'TrajectoryIndex', 'TrajectoryStep', 'InitialStateFC', 'FinalStateFC', 'Controller', 'Reward', 'Done'] + action_space_names + ['Info'] + init_obs_keys_to_save + final_obs_keys_to_save
+        column_names = ['Scene', 'TrajectoryIndex', 'TrajectoryStep', 'InitialStateFC', 'FinalStateFC', 'Controller', 'Reward', 'Done'] + action_space_names + ['Info'] + init_obs_keys_to_save + final_obs_keys_to_save + list(self.additional_info.keys())
         return column_names
 
     def _get_legend_lines(self, data_params):
@@ -156,7 +157,7 @@ class EnvDataCollector(DataCollectorBase):
             final_obs_keys_to_save = self._get_observation_keys_to_save(final_obs)
             init_obs_to_save = [init_obs[k] for k in init_obs_keys_to_save] # we add the observation part that is not self saved to the datalegend
             final_obs_to_save = [final_obs[k] for k in final_obs_keys_to_save] # we add the observation part that is not self saved to the datalegend
-            line_i = [scene_i, trajectory_indx_i, trajectory_step_i, init_fc_i, final_fc_i, self.controller.name, reward_i, done_i] + action_values + [info_i] + init_obs_to_save + final_obs_to_save
+            line_i = [scene_i, trajectory_indx_i, trajectory_step_i, init_fc_i, final_fc_i, self.controller.name, reward_i, done_i] + action_values + [info_i] + init_obs_to_save + final_obs_to_save + list(self.additional_info.values())
             legend_lines.append(line_i)
         return legend_lines
 
