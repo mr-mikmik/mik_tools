@@ -146,6 +146,8 @@ def quaternion_about_axis(angle:Union[torch.Tensor, np.ndarray], axis:Union[torc
         quaternion = quaternion_about_axis_tensor(angle=angle, axis=axis)
     elif type(axis) is np.ndarray:
         quaternion = quaternion_about_axis_array(angle=angle, axis=axis)
+    elif type(axis) in [list, tuple]:
+        quaternion = quaternion_about_axis_array(angle=np.array([angle]), axis=np.array([axis]))[0]
     else:
         raise NotImplementedError(f'Input types not tensor or array (types: axis {type(axis)} angle {type(angle)}')
     return quaternion
