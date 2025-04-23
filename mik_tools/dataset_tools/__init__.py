@@ -3,3 +3,4 @@ from mik_tools.dataset_tools.legended_dataset import LegendedDataset
 from mik_tools.dataset_tools.processed_dataset import ProcessedDataset
 from mik_tools.dataset_tools.trajectory_dataset import TrajectoryDataset
 from mik_tools.dataset_tools.trajectory_dataset_wrapper import TrajectoryDatasetWrapper
+from .datasets import *

@@ -1,15 +1,7 @@
 import numpy as np
 import os
-import pandas as pd
-from torch.utils.data import Dataset
-import abc
-import matplotlib.pyplot as plt
-import torch
-import shutil
-from tqdm import tqdm
-import copy
+from numpy import *
 
-from mik_tools.dataset_tools.aux.data_transformations import TensorTypeTr
 from mik_tools.aux.package_utils import get_dataset_path
 
 
@@ -70,3 +62,11 @@ def process_str_list_of_str(str_list):
     list_elem = _str_list.split(', ')
     list_out = [x[1:-1] for x in list_elem if x != '']  # remove the '' around each string
     return list_out
+
+
+def process_dict_array(dict_array_raw):
+    if type(dict_array_raw) is str:
+        dict_out = eval(dict_array_raw)
+    else:
+        raise NotImplementedError('Not implemented yet for type {}'.format(type(dict_array_raw)))
+    return dict_out

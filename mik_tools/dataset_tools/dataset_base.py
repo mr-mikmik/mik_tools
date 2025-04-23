@@ -294,6 +294,10 @@ class DatasetBase(Dataset, abc.ABC):
         list_out = dataset_process_utils.process_str_list_of_str(str_list)
         return list_out
 
+    def _process_dict_array(self, dict_array_raw):
+        dict_out = dataset_process_utils.process_dict_array(dict_array_raw)
+        return dict_out
+
     def _pack_all_samples(self):
         sample_test = self.__getitem__(0)
         samples = {}
