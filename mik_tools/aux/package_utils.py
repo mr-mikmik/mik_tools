@@ -29,6 +29,14 @@ def get_dataset_path(dataset_name=None):
     return dataset_path
 
 
+def get_logging_path(log_name=None):
+    log_default_path = '~/lightning_logs'
+    log_path = os.path.expanduser(log_default_path)
+    if log_name is not None:
+        log_path = os.path.join(log_path, log_name)
+    return log_path
+
+
 def get_mesh_path(mesh_name):
     mesh_dir_path = MESHES_PATH
     mesh_path = os.path.join(mesh_dir_path, mesh_name)
