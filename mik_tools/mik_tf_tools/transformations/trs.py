@@ -101,15 +101,15 @@ def quaternion_from_euler(ai, aj, ak, axes='sxyz') -> np.ndarray:
     if parity:
         aj = -aj
 
-    ai /= 2.0
-    aj /= 2.0
-    ak /= 2.0
-    ci = np.cos(ai)
-    si = np.sin(ai)
-    cj = np.cos(aj)
-    sj = np.sin(aj)
-    ck = np.cos(ak)
-    sk = np.sin(ak)
+    ai_half = ai * 0.5
+    aj_half = aj * 0.5
+    ak_half = ak * 0.5
+    ci = np.cos(ai_half)
+    si = np.sin(ai_half)
+    cj = np.cos(aj_half)
+    sj = np.sin(aj_half)
+    ck = np.cos(ak_half)
+    sk = np.sin(ak_half)
     cc = ci*ck
     cs = ci*sk
     sc = si*ck
