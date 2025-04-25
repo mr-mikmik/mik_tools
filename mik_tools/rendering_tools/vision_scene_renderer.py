@@ -194,7 +194,6 @@ class VisionSceneRenderer(object):
         for idx_frame in frame_indxs:
             self.scene.set_pose(self.object_node, pose=w_X_of[idx_frame])
             color, depth = render_engine.render(self.scene)
-
             color_imgs.append(color)
             depth_imgs.append(depth)
         render_engine.delete()
@@ -297,7 +296,13 @@ class VisionSceneRenderer(object):
             cx = K[0, 2]
             cy = K[1, 2]
             w_X_cfr = vcam.w_X_cf @ cf_X_cfpr  # adjust the axis rotation of pyrender
-            cam = pyrender.IntrinsicsCamera(fx, fy, cx, cy)
+
+            add_kwargs = {}
+            if vcam.znear is not None:
+                add_kwargs['znear'] = vcam.znear
+            if vcam.zfar is not None:
+                add_kwargs['zfar'] = vcam.zfar
+            cam = pyrender.IntrinsicsCamera(fx, fy, cx, cy, **add_kwargs)
             vcam_node = scene.add(cam, pose=w_X_cfr)
             cam_nodes.append(vcam_node)
             # add light
