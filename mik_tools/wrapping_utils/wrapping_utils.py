@@ -49,6 +49,32 @@ class DecoratorWrapper(object):
         return Wrapper
 
 
+class EnvWrapper(AttributeWrapper):
+    """
+    Base class for environment wrappers.
+    """
+
+    def __init__(self, env):
+        self.env = env
+        super().__init__(env)
+        self.observation_space = self.env.observation_space
+        self.action_space = self.env.action_space
+
+    def reset_env(self, **kwargs):
+        """
+        Reset the environment.
+        :param kwargs: keyword arguments to pass to the env.reset() method
+        :return: observation
+        """
+        return self.env.reset(**kwargs)
+
+    def __getattr__(self, attr):
+        if attr in self.__dict__:
+            return getattr(self, attr)
+        return getattr(self.env, attr)
+
+
+
 # ======================================================================================================================
 #  -------------------------   EXAMPLES   ------------------------------------------------------------------------------
 # ======================================================================================================================

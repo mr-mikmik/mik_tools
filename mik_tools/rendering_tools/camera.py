@@ -6,11 +6,13 @@ from .rendering_tools import render_view, render_tactile, get_default_intrinsics
 
 
 class Camera(object):
-    def __init__(self, pose, K=None, img_size=(400, 400), render_scale=1, tactile_plane_distance=None):
+    def __init__(self, pose, K=None, img_size=(400, 400), render_scale=1, tactile_plane_distance=None, znear=None, zfar=None):
         self.pose = pose # pose of the camera optical frame w.r.t the world frame (i.e. w_pose_cf)
         self.K = K
         self.img_size = img_size # as (h, w) -- CAREFUL! This is flipped.
         self.render_scale = render_scale
+        self.znear = znear
+        self.zfar = zfar
         self.crop_size = None
         self.crop_center_uv = None
         self.tactile_plane_distance = tactile_plane_distance

@@ -34,6 +34,15 @@ def load_point_cloud(data_path, scene_name, camera_name, fc):
     return pc_array
 
 
+def load_image(data_path, scene_name, camera_name, fc, image_name='image', as_numpy=False):
+    full_path = data_path_tools.get_image_path(save_path=data_path, scene_name=scene_name, camera_name=camera_name,
+                                               fc=fc, image_name=image_name, as_numpy=as_numpy)
+    file_dir, filename = data_path_tools.split_full_path(full_path)
+    filename_only, extension = data_path_tools.split_filename(filename)
+    img_array = load_img(file_dir=file_dir, filename=filename_only, extension=extension[1:])
+    return img_array
+
+
 def load_image_color(data_path, scene_name, camera_name, fc, as_numpy=False):
     full_path = data_path_tools.get_image_color_path(save_path=data_path, scene_name=scene_name,
                                                      camera_name=camera_name, fc=fc, as_numpy=as_numpy)

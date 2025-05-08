@@ -103,11 +103,15 @@ class DataCollectorBase(abc.ABC):
     def _filter_params_to_save(self, params_dict):
         params_to_save = {}
         types_to_save = [str, int, float, type(None), tuple, list, bool]
+        np_types_to_save = [np.float64, np.float32, np.int64, np.int32, np.uint8, np.int8]
         for k, v in params_dict.items():
             if type(v) is dict:
                 params_to_save[k] = self._filter_params_to_save(v)
             elif type(v) == np.ndarray:
-                params_to_save[k] = v.tolist()
+                if v.dtype in np_types_to_save:
+                    params_to_save[k] = v.tolist()
+                else:
+                    params_to_save[k] = list(self._filter_params_to_save({'mik': v.tolist()}).values())
             elif type(v) in [list, tuple]:
                 listed_params = []
                 for v_i in v:
@@ -116,7 +120,7 @@ class DataCollectorBase(abc.ABC):
                 params_to_save[k] = listed_params
             elif type(v) in types_to_save:
                 params_to_save[k] = v
-            elif type(v) in [np.float64, np.float32, np.int64, np.int32, np.uint8, np.int8]:
+            elif type(v) in np_types_to_save:
                 params_to_save[k] = v.item()
             else:
                 pass
