@@ -373,6 +373,63 @@ def quaternion_from_matrix_batched_tensor(matrix_in: torch.Tensor) -> torch.Tens
     Convert rotations given as rotation matrices to quaternions.
 
     Args:
+        matrix_in: Transformation matrices as tensor of shape (..., 4, 4).
+
+    Returns:
+        Quaternions with real part last, as tensor of shape (..., 4). Format: [qx, qy, qz, qw].
+    """
+    # Extract rotation part
+    R = matrix_in[..., :3, :3]  # shape (..., 3, 3)
+
+    batch_shape = R.shape[:-2]
+    q = torch.zeros(batch_shape + (4,), dtype=R.dtype, device=R.device) # (..., 4)
+
+    trace = R[..., 0, 0] + R[..., 1, 1] + R[..., 2, 2] # (...,)
+
+    # Positive trace case
+    mask = trace > 0.0 # (...,)
+    t = trace[mask] # (...,)
+    s = torch.sqrt(t + 1.0) * 2  # s = 4 * qw # (...,)
+    q[mask, 3] = 0.25 * s
+    q[mask, 0] = (R[mask, 2, 1] - R[mask, 1, 2]) / s
+    q[mask, 1] = (R[mask, 0, 2] - R[mask, 2, 0]) / s
+    q[mask, 2] = (R[mask, 1, 0] - R[mask, 0, 1]) / s
+
+    # Handle cases where trace <= 0
+    mask1 = (R[..., 0, 0] > R[..., 1, 1]) & (R[..., 0, 0] > R[..., 2, 2]) & (~mask) # (...,)
+    s1 = torch.sqrt(1.0 + R[mask1, 0, 0] - R[mask1, 1, 1] - R[mask1, 2, 2]) * 2
+    q[mask1, 3] = (R[mask1, 2, 1] - R[mask1, 1, 2]) / s1
+    q[mask1, 0] = 0.25 * s1
+    q[mask1, 1] = (R[mask1, 0, 1] + R[mask1, 1, 0]) / s1
+    q[mask1, 2] = (R[mask1, 0, 2] + R[mask1, 2, 0]) / s1
+
+    mask2 = (R[..., 1, 1] > R[..., 2, 2]) & (~mask) & (~mask1) # (...,)
+    s2 = torch.sqrt(1.0 + R[mask2, 1, 1] - R[mask2, 0, 0] - R[mask2, 2, 2]) * 2
+    q[mask2, 3] = (R[mask2, 0, 2] - R[mask2, 2, 0]) / s2
+    q[mask2, 0] = (R[mask2, 0, 1] + R[mask2, 1, 0]) / s2
+    q[mask2, 1] = 0.25 * s2
+    q[mask2, 2] = (R[mask2, 1, 2] + R[mask2, 2, 1]) / s2
+
+    mask3 = (~mask) & (~mask1) & (~mask2) # (...,)
+    s3 = torch.sqrt(1.0 + R[mask3, 2, 2] - R[mask3, 0, 0] - R[mask3, 1, 1]) * 2
+    q[mask3, 3] = (R[mask3, 1, 0] - R[mask3, 0, 1]) / s3
+    q[mask3, 0] = (R[mask3, 0, 2] + R[mask3, 2, 0]) / s3
+    q[mask3, 1] = (R[mask3, 1, 2] + R[mask3, 2, 1]) / s3
+    q[mask3, 2] = 0.25 * s3
+
+    # Normalize quaternion to ensure unit length
+    q = q / q.norm(dim=-1, keepdim=True) # (..., 4)
+
+    return q
+
+
+
+
+def quaternion_from_matrix_batched_tensor_2(matrix_in: torch.Tensor) -> torch.Tensor:
+    """
+    Convert rotations given as rotation matrices to quaternions.
+
+    Args:
         matrix: Transformation matrix matrices as tensor of shape (..., 4, 4).
 
     Returns:
