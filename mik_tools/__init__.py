@@ -3,4 +3,4 @@ from mik_tools.mik_tf_tools.tf_tools import eye_pose, matrix_to_pose, pose_to_ma
 from mik_tools.mik_tf_tools.tr_trajectory_utils import pose_matrix_trajectory_interpolation, pose_matrix_interpolation
 import mik_tools.aux.package_utils as package_tools
 from mik_tools.aux.package_utils import get_dataset_path, get_logging_path
-from mik_tools.aux.code_utils import einsum
+from mik_tools.aux.code_utils import einsum, Rate
