@@ -28,9 +28,25 @@ class Rate(object):
             reset (bool): If True, resets the timer when ROS time moves backwards. Defaults to False.
         """
         self.last_time = self._get_time()
+        self._hz = None
+        self.period = None
         self.hz = hz
-        self.period = 1/self.hz
         self.sleep_fn = sleep_fn if sleep_fn is not None else time.sleep
+
+    @property
+    def hz(self) -> float:
+        """
+        Get the current frequency in Hz.
+
+        Returns:
+            float: Current frequency in Hz.
+        """
+        return self._hz
+    
+    @hz.setter
+    def hz(self, hz: float) -> None:
+        self._hz = hz
+        self.period = 1.0 / hz if hz > 0 else float('inf')
 
     def _get_time(self) -> float:
         """
