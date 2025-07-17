@@ -1,6 +1,6 @@
 from mik_tools.wrapping_utils.wrapping_utils import ClassWrapper
 from mik_tools.recording_utils.recording_utils import record_image_color, record_image_depth, record_image, \
-    record_camera_info_color, record_camera_info_depth, record_point_cloud, record_actions, \
+    record_camera_info, record_camera_info_color, record_camera_info_depth, record_point_cloud, record_actions, \
     record_shear_deformation, record_shear_image, record_pressure, record_array, record_deformation_image, record_controller_info, record_image_depth_filtered
 
 
@@ -139,6 +139,15 @@ class ControllerInfoSavedWrapper(DataSelfSavedWrapper):
         save_path = self.data_params['save_path']
         scene_name = self.data_params['scene_name']
         record_controller_info(self.data, save_path=save_path, scene_name=scene_name, fc=fc)
+
+
+class CameraInfoSelfSavedWrapper(DataSelfSavedWrapper):
+    def save_fc(self, fc):
+        save_path = self.data_params['save_path']
+        scene_name = self.data_params['scene_name']
+        camera_name = self.data_params['camera_name']
+        info_name = self.data_params.get('info_name', 'camera_info')
+        record_camera_info(self.data, save_path=save_path, scene_name=scene_name, camera_name=camera_name, info_name=info_name, fc=fc)
 
 
 class CameraInfoColorSelfSavedWrapper(DataSelfSavedWrapper):
