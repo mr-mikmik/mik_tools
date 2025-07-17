@@ -115,7 +115,7 @@ def quaternion_from_euler(ai, aj, ak, axes='sxyz') -> np.ndarray:
     sc = si*ck
     ss = si*sk
 
-    batch_dims = () if type(ai) == float else ai.shape
+    batch_dims = () if type(ai) in [float,int] else ai.shape
     quaternion = np.empty(batch_dims + (4, ), dtype=np.float64)
     if repetition:
         quaternion[..., i] = cj*(cs + sc)
