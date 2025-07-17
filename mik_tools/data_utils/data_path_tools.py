@@ -120,7 +120,7 @@ def get_image_depth_filtered_path(save_path, scene_name, camera_name, fc, as_num
     return full_path
 
 
-def get_camera_info_color_path(save_path, scene_name, camera_name, fc):
+def get_camera_info_path(save_path, scene_name, camera_name, fc, info_name='camera_info'):
     if fc is None:
         suffix = ''
     elif type(fc) is str:
@@ -131,28 +131,20 @@ def get_camera_info_color_path(save_path, scene_name, camera_name, fc):
         suffix = '_{:06d}'.format(fc)
     save_path = os.path.join(save_path, scene_name, camera_name, 'camera_info')
     if include_scene_name_to_file_name:
-        filename = '{}_camera_info_color{}'.format(scene_name, suffix)
+        filename = '{}_{}{}'.format(scene_name, info_name, suffix)
     else:
-        filename = 'camera_info_color{}'.format(suffix)
+        filename = '{}{}'.format(info_name, suffix)
     full_path = os.path.join(save_path, '{}.npy'.format(filename))
     return full_path
 
 
+def get_camera_info_color_path(save_path, scene_name, camera_name, fc):
+    full_path = get_camera_info_path(save_path, scene_name, camera_name, fc, info_name='camera_info_color')
+    return full_path
+
+
 def get_camera_info_depth_path(save_path, scene_name, camera_name, fc):
-    if fc is None:
-        suffix = ''
-    elif type(fc) is str:
-        suffix = ''
-        if fc != '':
-            suffix = '_{}'.format(fc)
-    else:
-        suffix = '_{:06d}'.format(fc)
-    save_path = os.path.join(save_path, scene_name, camera_name, 'camera_info')
-    if include_scene_name_to_file_name:
-        filename = '{}_camera_info_depth{}'.format(scene_name, suffix)
-    else:
-        filename = 'camera_info_depth{}'.format(suffix)
-    full_path = os.path.join(save_path, '{}.npy'.format(filename))
+    full_path = get_camera_info_path(save_path, scene_name, camera_name, fc, info_name='camera_info_depth')
     return full_path
 
 

@@ -90,6 +90,23 @@ def record_deformation_image(shear_image, save_path, scene_name, camera_name, fc
     save_image(shear_image, filename=filename_only, save_path=save_path, save_as_numpy=False)
 
 
+def record_camera_info(camera_info, save_path, scene_name, camera_name, fc, info_name='camera_info'):
+    """
+    Record camera info to a file.
+
+    :param camera_info: Camera info to be recorded.
+    :param save_path: Path where the camera info will be saved.
+    :param scene_name: Name of the scene.
+    :param camera_name: Name of the camera.
+    :param fc: Frame count or identifier for the recording.
+    :param info_name: Name of the camera info file (default is 'camera_info').
+    """
+    full_path = data_path_tools.get_camera_info_path(save_path=save_path, scene_name=scene_name, camera_name=camera_name, fc=fc, info_name=info_name)
+    save_path, filename = data_path_tools.split_full_path(full_path)
+    filename_only, extension = data_path_tools.split_filename(filename)
+    save_camera_info(camera_info, filename=filename_only, save_path=save_path)
+
+
 def record_camera_info_depth(camera_info, save_path, scene_name, camera_name, fc):
     full_path = data_path_tools.get_camera_info_depth_path(save_path=save_path, scene_name=scene_name, camera_name=camera_name, fc=fc)
     save_path, filename = data_path_tools.split_full_path(full_path)
@@ -102,7 +119,6 @@ def record_camera_info_color(camera_info, save_path, scene_name, camera_name, fc
                                                            camera_name=camera_name, fc=fc)
     save_path, filename = data_path_tools.split_full_path(full_path)
     filename_only, extension = data_path_tools.split_filename(filename)
-
     save_camera_info(camera_info, filename=filename_only, save_path=save_path)
 
 
