@@ -18,6 +18,9 @@ class WebsocketClientBase(object):
         self._uri = f"ws://{host_ip}:{port}"
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(logging.INFO)
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(logging.Formatter('%(asctime)s - [%(levelname)s] - %(message)s'))
+        self.logger.addHandler(console_handler)
         self._ws, self._server_metadata = None, None
         self._connected = False
 

@@ -1,4 +1,3 @@
-import logging
 import traceback
 import websockets
 import asyncio
@@ -8,6 +7,7 @@ import pickle
 import gzip
 import abc
 from typing import Optional, Any
+import logging
 
 from websockets.sync.server import serve
 from websockets.exceptions import ConnectionClosed, WebSocketException
@@ -32,17 +32,20 @@ class WebsocketServerBase(object):
         self._metadata = metadata or {}
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(logging.INFO)
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+        self.logger.addHandler(console_handler)
 
     def serve_forever(self) -> None:
         self.logger.info(f"Server running on {self._uri}")
         server = serve(self._handler, self._host_ip, self._port)
         server.serve_forever()
-        print('HH')
 
     def _handler(self, websocket) -> None:
         """Handle incoming websocket connections synchronously."""
-        print('hello')
-        self.logger.info(f'Connection from {websocket.remote_address} opened')
+        # print('hello')
+        remote_address = websocket.remote_address
+        self.logger.warning(f'Connection from {websocket.remote_address} opened')
         try:
             websocket.send(self.serialize_data(self._metadata))
             self.logger.info("Client connected.")
@@ -50,13 +53,16 @@ class WebsocketServerBase(object):
                 try:
                     received_data_raw = websocket.recv()
                     received_data = self.deserialize_data(received_data_raw)
-                    self.logger.info(f"Raw received: {received_data_raw}")
+                    self.logger.debug(f"Raw received: {received_data_raw}")
+                    self.logger.info(f"Received data: {received_data}")
                     response_data = self._process_data(received_data)
-                    self.logger.debug(f"Processed response: {response_data}")
+                    self.logger.info(f"Processed response: {response_data}")
                     response = self.serialize_data(response_data)
+                    self.logger.debug(f"Sending response: {response}")
                     websocket.send(response)
                 except ConnectionClosed:
-                    self.logger.info(f"Connection from {websocket.remote_address} closed")
+                    self.logger.info(f'Connection from client CLOSED')
+                    # self.logger.info(f"Connection from {websocket.remote_address} closed")
                     break
                 except Exception:
                     tb = traceback.format_exc()
@@ -64,7 +70,8 @@ class WebsocketServerBase(object):
                     websocket.close(code=1011, reason="Internal server error. Traceback sent.")
                     raise
         finally:
-            self.logger.info(f"Connection from {websocket.remote_address} cleaned up.")
+            self.logger.info(f"Connection with client {remote_address} cleaned up.")
+            # self.logger.info(f"Connection from {websocket.remote_address} cleaned up.")
 
     @abc.abstractmethod
     def _process_data(self, data: Any) -> Any:
