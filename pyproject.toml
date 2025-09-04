@@ -46,7 +46,15 @@ dependencies = [# Optional
     'vedo',
     'virtualenv',
     'gym',
+]
+
+[project.optional-dependencies]
+learning = [
+    'torchvision',
     'lightning',
+    'tensorboard',
+    'wandb',
+    'einops',
 ]
 
 [tool.setuptools]
