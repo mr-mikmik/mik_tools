@@ -114,7 +114,7 @@ class DatasetBase(Dataset, abc.ABC):
         # but no persistent_load function was specified. " We try to load the data multiple times until it works.
         for i in range(1000):
             try:
-                item_i = torch.load(save_path_i, map_location=self.device)
+                item_i = torch.load(save_path_i, map_location=self.device, weights_only=False)
             except:
                 continue
             if item_i is not None:
@@ -286,8 +286,8 @@ class DatasetBase(Dataset, abc.ABC):
         list_out = dataset_process_utils.process_list_array(list_array_raw)
         return list_out
 
-    def _process_str_list(self, str_list, separator=', '):
-        list_out = dataset_process_utils.process_str_list(str_list, separator=separator)
+    def _process_str_list(self, str_list, separator=', ', type_out=float, asarray=True):
+        list_out = dataset_process_utils.process_str_list(str_list, separator=separator, type_out=type_out, asarray=asarray)
         return list_out
 
     def _process_str_list_of_str(self, str_list):

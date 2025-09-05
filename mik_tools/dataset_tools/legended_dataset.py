@@ -8,7 +8,8 @@ import mik_tools.data_utils.loading_utils as load_utils
 
 class LegendedDataset(DatasetBase):
 
-    def __init__(self, data_name, **kwargs):
+    def __init__(self, data_name, filecode_key='FileCode',**kwargs):
+        self.filecode_key = filecode_key
         self.data_path, self.data_name = self._get_data_path(data_name)
         if not os.path.exists(self.data_path):
             raise FileNotFoundError(f'We have not found the dataset named {self.data_name} with path {self.data_path}')
@@ -38,7 +39,7 @@ class LegendedDataset(DatasetBase):
         By default we load all the filecodes we find in the datalegend
         :return:
         """
-        return self.dl['FileCode'].to_numpy()
+        return self.dl[self.filecode_key].to_numpy()
 
     def load_params(self):
         params_path = os.path.join(self.data_path, f'{self.data_name}_params.yaml')
