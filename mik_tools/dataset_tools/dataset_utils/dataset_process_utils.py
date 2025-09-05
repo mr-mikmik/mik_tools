@@ -43,18 +43,27 @@ def process_list_array(list_array_raw):
     return np.array(list_out)
 
 
-def process_str_list(str_list, separator=', '):
+def process_str_list(str_list, separator=', ', type_out=float, asarray=True):
     if type(str_list) is str:
         _str_list = str_list[1:-1]  # remove "[" and "]"
         list_elem = _str_list.split(separator)
-        list_out = [float(x) for x in list_elem if x != '']
+        if type_out == float:
+            list_out = [type_out(x) for x in list_elem if x != '']
+        elif type_out == str:
+            # remove the '' around each string
+            list_out = [x[1:-1] for x in list_elem if x != '']
+        else:
+            list_out = [type_out(x) for x in list_elem if x != '']
     elif str_list is None:
         list_out = []
     elif np.isnan(str_list):
         list_out = []
     else:
         raise ValueError(f'Unsupported type {type(str_list)}')
-    return np.array(list_out)
+    if asarray:
+        return np.array(list_out)
+    else:
+        return list_out
 
 
 def process_str_list_of_str(str_list):
