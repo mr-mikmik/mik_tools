@@ -16,11 +16,11 @@ def record_array(ar, save_path,  scene_name, fc, array_name=None):
     save_array(ar, filename=filename_only, save_path=save_path)
 
 
-def record_tensor(x, save_path, scene_name, fc, tensor_name=None):
+def record_tensor(x, save_path, scene_name, fc, tensor_name=None, no_detach=False):
     full_path = data_path_tools.get_tensor_path(save_path=save_path, scene_name=scene_name, fc=fc, tensor_name=tensor_name)
     save_path, filename = data_path_tools.split_full_path(full_path)
     filename_only, extension = data_path_tools.split_filename(filename)
-    save_tensor(x, filename=filename_only, save_path=save_path)
+    save_tensor(x, filename=filename_only, save_path=save_path, no_detach=no_detach)
 
 
 def record_point_cloud(pc, save_path, scene_name, camera_name, fc):
@@ -207,11 +207,15 @@ def save_array(array, filename, save_path):
     np.save(full_save_path, array)
 
 
-def save_tensor(tensor, filename, save_path):
+def save_tensor(tensor, filename, save_path, no_detach=False):
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     full_save_path = os.path.join(save_path, '{}.pt'.format(filename))
-    torch.save(tensor, full_save_path)
+    if no_detach:
+        torch.save(tensor, full_save_path)
+    else:
+        # detach the tensor from the graph so we do not need to keep the graph in memory
+        torch.save(tensor.detach().clone().cpu(), full_save_path)
 
 
 def save_controller_info(controller_info, filename, save_path):
