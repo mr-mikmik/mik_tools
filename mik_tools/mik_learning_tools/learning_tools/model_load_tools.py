@@ -15,15 +15,18 @@ def load_model(Model, load_version, data_path, load_epoch=None, load_step=None, 
 
 
 def get_checkpoint_path(model_name, load_version, data_path, load_epoch=None, load_step=None):
-    if load_epoch is None or load_step is None:
+    if model_name is None:
+        version_chkp_path = os.path.join(data_path, 'version_{}'.format(load_version), 'checkpoints')
+    else:
         version_chkp_path = os.path.join(data_path, 'tb_logs', '{}'.format(model_name),
                                          'version_{}'.format(load_version), 'checkpoints')
+    # 
+    if load_epoch is None or load_step is None:
         checkpoints_fs = [f for f in os.listdir(version_chkp_path) if
                           os.path.isfile(os.path.join(version_chkp_path, f))]
         checkpoint_path = os.path.join(version_chkp_path, checkpoints_fs[0])
     else:
-        checkpoint_path = os.path.join(data_path, 'tb_logs', '{}'.format(model_name),
-                                       'version_{}'.format(load_version), 'checkpoints',
+        checkpoint_path = os.path.join(version_chkp_path, 
                                        'epoch={}-step={}.ckpt'.format(load_epoch, load_step))
 
     return checkpoint_path
